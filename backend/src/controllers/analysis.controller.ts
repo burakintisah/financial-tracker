@@ -5,7 +5,7 @@
 
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { getOrCreateAnalysis, getAnalysisStats } from '../services/stock-analysis.service';
+import { getOrCreateAnalysis, getAnalysisStats, getTodayAnalyses } from '../services/stock-analysis.service';
 import { testAIService } from '../services/claude-ai.service';
 import { getStocksByMarket, isValidTicker } from '../config/stocks';
 import { Market, Timeframe } from '../types/analysis.types';
@@ -88,14 +88,18 @@ export async function getAnalysis(req: Request, res: Response): Promise<void> {
 
 /**
  * Get trending/popular stocks for a market
- * GET /api/analysis/trending/:market
+ * GET /api/analysis/trending/:market?timeframe=3M
+ * Returns stocks with their analysis if available for today
  */
 export async function getTrendingStocks(req: Request, res: Response): Promise<void> {
   try {
     const marketParam = req.params.market?.toUpperCase();
-    const parseResult = marketSchema.safeParse(marketParam);
+    const timeframeParam = (req.query.timeframe as string)?.toUpperCase() || '3M';
 
-    if (!parseResult.success) {
+    const marketResult = marketSchema.safeParse(marketParam);
+    const timeframeResult = timeframeSchema.safeParse(timeframeParam);
+
+    if (!marketResult.success) {
       res.status(400).json({
         success: false,
         error: `Invalid market '${marketParam}'. Must be 'BIST' or 'US'`,
@@ -103,13 +107,37 @@ export async function getTrendingStocks(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const market = parseResult.data as Market;
+    if (!timeframeResult.success) {
+      res.status(400).json({
+        success: false,
+        error: `Invalid timeframe '${timeframeParam}'. Must be '1M', '3M', or '6M'`,
+      });
+      return;
+    }
+
+    const market = marketResult.data as Market;
+    const timeframe = timeframeResult.data as Timeframe;
     const stocks = getStocksByMarket(market);
+
+    // Get today's analyses for this market/timeframe
+    const todayAnalyses = await getTodayAnalyses(market, timeframe);
+
+    // Enhance stocks with analysis data if available
+    const stocksWithAnalysis = stocks.map((stock) => {
+      const analysis = todayAnalyses.get(stock.ticker);
+      return {
+        ...stock,
+        hasAnalysisToday: !!analysis,
+        analysis: analysis || null,
+      };
+    });
 
     res.json({
       success: true,
-      data: stocks,
+      data: stocksWithAnalysis,
       market,
+      timeframe,
+      analysisCount: todayAnalyses.size,
     });
   } catch (error) {
     console.error('[AnalysisController] Error getting trending stocks:', error);

@@ -4,13 +4,13 @@
  */
 
 import { useEffect } from 'react';
-import { IStockAnalysis, IStockInfo } from '../types/analysis.types';
+import { IStockAnalysis, IStockWithAnalysis } from '../types/analysis.types';
 
 interface AnalysisModalProps {
   isOpen: boolean;
   onClose: () => void;
   analysis: IStockAnalysis | null;
-  stockInfo: IStockInfo | null;
+  stockInfo: IStockWithAnalysis | null;
   isLoading?: boolean;
   error?: string | null;
 }

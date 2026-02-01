@@ -1,13 +1,13 @@
 /**
  * StockAnalysisCard Component
  * Displays stock analysis information in a card format
+ * Shows "View Details" if analysis exists for today, otherwise "Generate Analysis"
  */
 
-import { IStockAnalysis, IStockInfo } from '../types/analysis.types';
+import { IStockAnalysis, IStockWithAnalysis } from '../types/analysis.types';
 
 interface StockAnalysisCardProps {
-  analysis?: IStockAnalysis;
-  stockInfo: IStockInfo;
+  stockInfo: IStockWithAnalysis;
   isLoading?: boolean;
   onViewDetails?: () => void;
 }
@@ -84,8 +84,60 @@ function LoadingSkeleton() {
   );
 }
 
+function AnalysisContent({ analysis, onViewDetails }: { analysis: IStockAnalysis; onViewDetails?: () => void }) {
+  return (
+    <>
+      <ProbabilityBar probability={analysis.prediction.probability} />
+
+      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-500">Target Low</span>
+          <p className="font-medium text-gray-800">
+            ${analysis.prediction.price_target_low.toFixed(2)}
+          </p>
+        </div>
+        <div>
+          <span className="text-gray-500">Target High</span>
+          <p className="font-medium text-gray-800">
+            ${analysis.prediction.price_target_high.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <RiskBadge level={analysis.risk_level} />
+        <span className="text-xs text-gray-400">
+          Confidence: {analysis.confidence}
+        </span>
+      </div>
+
+      <p className="mt-4 text-sm text-gray-600 line-clamp-2">{analysis.summary}</p>
+
+      <button
+        onClick={onViewDetails}
+        className="mt-4 w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+      >
+        View Details
+      </button>
+    </>
+  );
+}
+
+function NoAnalysisContent({ onViewDetails }: { onViewDetails?: () => void }) {
+  return (
+    <div className="mt-4">
+      <p className="text-sm text-gray-500 mb-4">No analysis for today yet</p>
+      <button
+        onClick={onViewDetails}
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+      >
+        Generate Analysis
+      </button>
+    </div>
+  );
+}
+
 export function StockAnalysisCard({
-  analysis,
   stockInfo,
   isLoading,
   onViewDetails,
@@ -93,6 +145,8 @@ export function StockAnalysisCard({
   if (isLoading) {
     return <LoadingSkeleton />;
   }
+
+  const { hasAnalysisToday, analysis } = stockInfo;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -102,54 +156,15 @@ export function StockAnalysisCard({
           <p className="text-sm text-gray-600">{stockInfo.name}</p>
           <p className="text-xs text-gray-400">{stockInfo.sector}</p>
         </div>
-        {analysis && <PredictionBadge direction={analysis.prediction.direction} />}
+        {hasAnalysisToday && analysis && (
+          <PredictionBadge direction={analysis.prediction.direction} />
+        )}
       </div>
 
-      {analysis ? (
-        <>
-          <ProbabilityBar probability={analysis.prediction.probability} />
-
-          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500">Target Low</span>
-              <p className="font-medium text-gray-800">
-                ${analysis.prediction.price_target_low.toFixed(2)}
-              </p>
-            </div>
-            <div>
-              <span className="text-gray-500">Target High</span>
-              <p className="font-medium text-gray-800">
-                ${analysis.prediction.price_target_high.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <RiskBadge level={analysis.risk_level} />
-            <span className="text-xs text-gray-400">
-              Confidence: {analysis.confidence}
-            </span>
-          </div>
-
-          <p className="mt-4 text-sm text-gray-600 line-clamp-2">{analysis.summary}</p>
-
-          <button
-            onClick={onViewDetails}
-            className="mt-4 w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors"
-          >
-            View Details
-          </button>
-        </>
+      {hasAnalysisToday && analysis ? (
+        <AnalysisContent analysis={analysis} onViewDetails={onViewDetails} />
       ) : (
-        <div className="mt-4">
-          <p className="text-sm text-gray-500 mb-4">No analysis available yet</p>
-          <button
-            onClick={onViewDetails}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Generate Analysis
-          </button>
-        </div>
+        <NoAnalysisContent onViewDetails={onViewDetails} />
       )}
     </div>
   );

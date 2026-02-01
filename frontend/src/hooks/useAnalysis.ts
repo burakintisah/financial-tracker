@@ -9,22 +9,23 @@ import {
   Market,
   Timeframe,
   IStockAnalysis,
-  IStockInfo,
+  IStockWithAnalysis,
 } from '../types/analysis.types';
 
 interface UseAnalysisState {
-  stocks: IStockInfo[];
+  stocks: IStockWithAnalysis[];
   analyses: Map<string, IStockAnalysis>;
   isLoadingStocks: boolean;
   isLoadingAnalysis: boolean;
   error: string | null;
   selectedAnalysis: IStockAnalysis | null;
-  selectedStock: IStockInfo | null;
+  selectedStock: IStockWithAnalysis | null;
+  analysisCount: number;
 }
 
 interface UseAnalysisReturn extends UseAnalysisState {
   fetchAnalysis: (ticker: string) => Promise<void>;
-  selectStock: (stock: IStockInfo) => void;
+  selectStock: (stock: IStockWithAnalysis) => void;
   clearSelection: () => void;
   refetch: () => void;
 }
@@ -38,19 +39,30 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
     error: null,
     selectedAnalysis: null,
     selectedStock: null,
+    analysisCount: 0,
   });
 
-  // Fetch trending stocks when market changes
+  // Fetch trending stocks with today's analysis status
   const fetchStocks = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoadingStocks: true, error: null }));
 
     try {
-      const stocks = await analysisApi.getTrendingStocks(market);
+      const { stocks, analysisCount } = await analysisApi.getTrendingStocks(market, timeframe);
+
+      // Pre-populate analyses map with today's data
+      const analysesMap = new Map<string, IStockAnalysis>();
+      for (const stock of stocks) {
+        if (stock.analysis) {
+          analysesMap.set(stock.ticker, stock.analysis);
+        }
+      }
+
       setState((prev) => ({
         ...prev,
         stocks,
+        analyses: analysesMap,
         isLoadingStocks: false,
-        analyses: new Map(), // Clear analyses when market changes
+        analysisCount,
       }));
     } catch (error) {
       setState((prev) => ({
@@ -59,27 +71,27 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
         error: error instanceof Error ? error.message : 'Failed to fetch stocks',
       }));
     }
-  }, [market]);
+  }, [market, timeframe]);
 
   useEffect(() => {
     fetchStocks();
   }, [fetchStocks]);
 
-  // Clear analyses when timeframe changes
-  useEffect(() => {
-    setState((prev) => ({
-      ...prev,
-      analyses: new Map(),
-      selectedAnalysis: null,
-    }));
-  }, [timeframe]);
-
-  // Fetch analysis for a specific stock
+  // Fetch analysis for a specific stock (only if not already available)
   const fetchAnalysis = useCallback(
     async (ticker: string) => {
-      // Find the stock info
       const stock = state.stocks.find((s) => s.ticker === ticker);
       if (!stock) return;
+
+      // If we already have today's analysis, use it
+      if (stock.hasAnalysisToday && stock.analysis) {
+        setState((prev) => ({
+          ...prev,
+          selectedStock: stock,
+          selectedAnalysis: stock.analysis,
+        }));
+        return;
+      }
 
       setState((prev) => ({
         ...prev,
@@ -96,11 +108,20 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
           const newAnalyses = new Map(prev.analyses);
           newAnalyses.set(ticker, analysis);
 
+          // Update the stock's analysis status
+          const updatedStocks = prev.stocks.map((s) =>
+            s.ticker === ticker
+              ? { ...s, hasAnalysisToday: true, analysis }
+              : s
+          );
+
           return {
             ...prev,
+            stocks: updatedStocks,
             analyses: newAnalyses,
             selectedAnalysis: analysis,
             isLoadingAnalysis: false,
+            analysisCount: prev.analysisCount + 1,
           };
         });
       } catch (error) {
@@ -116,21 +137,25 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
 
   // Select a stock for viewing
   const selectStock = useCallback(
-    (stock: IStockInfo) => {
-      const existingAnalysis = state.analyses.get(stock.ticker);
-
-      setState((prev) => ({
-        ...prev,
-        selectedStock: stock,
-        selectedAnalysis: existingAnalysis || null,
-      }));
-
-      // Fetch analysis if not already loaded
-      if (!existingAnalysis) {
+    (stock: IStockWithAnalysis) => {
+      // If stock already has today's analysis, show it directly
+      if (stock.hasAnalysisToday && stock.analysis) {
+        setState((prev) => ({
+          ...prev,
+          selectedStock: stock,
+          selectedAnalysis: stock.analysis,
+        }));
+      } else {
+        // Otherwise fetch new analysis
+        setState((prev) => ({
+          ...prev,
+          selectedStock: stock,
+          selectedAnalysis: null,
+        }));
         fetchAnalysis(stock.ticker);
       }
     },
-    [state.analyses, fetchAnalysis]
+    [fetchAnalysis]
   );
 
   // Clear selection

@@ -283,6 +283,47 @@ export async function getAnalysisStats(): Promise<{
   }
 }
 
+/**
+ * Gets today's analyses for a market
+ * Returns a map of ticker -> analysis for stocks that have analysis today
+ */
+export async function getTodayAnalyses(
+  market: Market,
+  timeframe: Timeframe
+): Promise<Map<string, IStockAnalysis>> {
+  const client = await getSupabaseClient();
+  const result = new Map<string, IStockAnalysis>();
+
+  if (!client) return result; // No Supabase - no cached data
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await client
+      .from('stock_analyses')
+      .select('*')
+      .eq('market', market)
+      .eq('timeframe', timeframe)
+      .eq('analysis_date', today);
+
+    if (error || !data) {
+      console.error('[StockAnalysisService] Error fetching today analyses:', error);
+      return result;
+    }
+
+    for (const row of data) {
+      const analysis = dbRowToAnalysis(row as IStockAnalysisDB);
+      result.set(analysis.ticker, analysis);
+    }
+
+    console.log(`[StockAnalysis] Found ${result.size} analyses for ${market}/${timeframe} today`);
+    return result;
+  } catch (error) {
+    console.error('[StockAnalysisService] Error fetching today analyses:', error);
+    return result;
+  }
+}
+
 export default {
   getCachedAnalysis,
   saveAnalysis,
@@ -290,4 +331,5 @@ export default {
   getOrCreateAnalysis,
   getRecentAnalyses,
   getAnalysisStats,
+  getTodayAnalyses,
 };
