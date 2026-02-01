@@ -1,0 +1,112 @@
+/**
+ * Environment Configuration and Validation
+ * Ensures all required environment variables are set at startup
+ */
+
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+interface EnvConfig {
+  // Server
+  PORT: number;
+  NODE_ENV: 'development' | 'production' | 'test';
+  ALLOWED_ORIGINS: string[];
+
+  // Demo Mode
+  DEMO_MODE: boolean;
+
+  // Database (optional in demo mode)
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+
+  // Claude AI (optional in demo mode)
+  ANTHROPIC_API_KEY: string;
+  ANTHROPIC_MODEL: string;
+  ANTHROPIC_MAX_TOKENS: number;
+
+  // Cache
+  CACHE_TTL_HOURS: number;
+
+  // Rate Limiting
+  MAX_REQUESTS_PER_MINUTE: number;
+}
+
+function validateEnv(): { demoMode: boolean; hasSupabase: boolean } {
+  // Check if demo mode is explicitly enabled or if API keys are missing
+  const explicitDemoMode = process.env.DEMO_MODE === 'true';
+  const hasSupabase = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+
+  // Auto-enable demo mode if Anthropic key is missing
+  const demoMode = explicitDemoMode || !hasAnthropic;
+
+  console.log('='.repeat(60));
+  console.log('📊 Financial Tracker - Stock Analysis API');
+  console.log('='.repeat(60));
+
+  if (demoMode) {
+    console.log('🎮 AI MODE: Demo (mock responses)');
+  } else {
+    console.log('🤖 AI MODE: Claude API');
+  }
+
+  if (hasSupabase) {
+    console.log('💾 DATABASE: Supabase connected');
+  } else {
+    console.log('⚠️  DATABASE: Not configured (no caching)');
+  }
+
+  if (!hasAnthropic && !explicitDemoMode) {
+    console.log('');
+    console.log('To enable real AI analysis:');
+    console.log('  ANTHROPIC_API_KEY=sk-ant-api03-...');
+  }
+
+  console.log('='.repeat(60));
+
+  return { demoMode, hasSupabase };
+}
+
+function parseOrigins(origins: string | undefined): string[] {
+  if (!origins) {
+    return ['http://localhost:5173'];
+  }
+  return origins.split(',').map((origin) => origin.trim());
+}
+
+function getEnvConfig(): EnvConfig {
+  const { demoMode } = validateEnv();
+
+  return {
+    // Server
+    PORT: parseInt(process.env.PORT || '3001', 10),
+    NODE_ENV: (process.env.NODE_ENV as EnvConfig['NODE_ENV']) || 'development',
+    ALLOWED_ORIGINS: parseOrigins(process.env.ALLOWED_ORIGINS),
+
+    // Demo Mode
+    DEMO_MODE: demoMode,
+
+    // Database (empty strings if not set)
+    SUPABASE_URL: process.env.SUPABASE_URL || '',
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+
+    // Claude AI (empty if not set)
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+    ANTHROPIC_MAX_TOKENS: parseInt(process.env.ANTHROPIC_MAX_TOKENS || '2000', 10),
+
+    // Cache
+    CACHE_TTL_HOURS: parseInt(process.env.CACHE_TTL_HOURS || '24', 10),
+
+    // Rate Limiting
+    MAX_REQUESTS_PER_MINUTE: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '10', 10),
+  };
+}
+
+export const env = getEnvConfig();
+
+export default env;
