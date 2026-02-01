@@ -1,9 +1,10 @@
 /**
- * Claude AI Service
- * Handles AI-powered stock analysis using Anthropic's Claude API
+ * Gemini AI Service
+ * Handles AI-powered stock analysis using Google's Gemini API
  * Supports demo mode with realistic mock data when API key is not available
  */
 
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env';
 import { getStockInfo } from '../config/stocks';
 import {
@@ -117,7 +118,7 @@ function generateMockAnalysis(
       volume_trend: mockData.metrics?.volume_trend || 'stable',
     },
     risk_level: mockData.risk_level || 'medium',
-    summary: mockData.summary || `${ticker} analysis is currently in demo mode. Connect Anthropic API for real AI-powered insights.`,
+    summary: mockData.summary || `${ticker} analysis is currently in demo mode. Connect Gemini API for real AI-powered insights.`,
     key_factors: mockData.key_factors || ['Demo mode active', 'Connect API for real analysis', 'Market data simulated'],
     confidence: mockData.confidence || 'medium',
   };
@@ -147,7 +148,7 @@ function generateRandomMockData(ticker: string, sector?: string): Partial<IStock
     },
     risk_level: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high',
     confidence: 'low',
-    summary: `${ticker} in ${sector || 'unknown'} sector. This is demo data - connect Anthropic API for real AI analysis.`,
+    summary: `${ticker} in ${sector || 'unknown'} sector. This is demo data - connect Gemini API for real AI analysis.`,
     key_factors: ['Demo mode', 'Simulated metrics', 'API not connected'],
   };
 }
@@ -160,7 +161,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Analyzes a stock using Claude AI (or mock data in demo mode)
+ * Analyzes a stock using Gemini AI (or mock data in demo mode)
  */
 export async function analyzeStock(
   ticker: string,
@@ -174,9 +175,9 @@ export async function analyzeStock(
     return generateMockAnalysis(ticker, market, timeframe);
   }
 
-  // Real API call
-  const Anthropic = (await import('@anthropic-ai/sdk')).default;
-  const anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  // Real API call with Gemini
+  const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL });
 
   const today = new Date().toISOString().split('T')[0];
   const prompt = generateAnalysisPrompt(ticker, market, timeframe, today);
@@ -185,18 +186,15 @@ export async function analyzeStock(
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const message = await anthropicClient.messages.create({
-        model: env.ANTHROPIC_MODEL,
-        max_tokens: env.ANTHROPIC_MAX_TOKENS,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-      const textContent = message.content.find((block) => block.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
+      if (!text) {
         throw new Error('No text content in AI response');
       }
 
-      const parsed = parseAIResponse(textContent.text);
+      const parsed = parseAIResponse(text);
 
       return {
         ticker: parsed.ticker,
@@ -212,7 +210,7 @@ export async function analyzeStock(
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`[ClaudeAI] Attempt ${attempt}/${MAX_RETRIES} failed:`, lastError.message);
+      console.error(`[GeminiAI] Attempt ${attempt}/${MAX_RETRIES} failed:`, lastError.message);
 
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY_MS * attempt);
@@ -224,7 +222,7 @@ export async function analyzeStock(
 }
 
 /**
- * Generates the analysis prompt for Claude
+ * Generates the analysis prompt for Gemini
  */
 function generateAnalysisPrompt(ticker: string, market: Market, timeframe: Timeframe, today: string): string {
   return `You are a financial analyst. Analyze the following stock for a ${timeframe} outlook.
