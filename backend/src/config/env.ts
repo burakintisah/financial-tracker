@@ -34,49 +34,40 @@ interface EnvConfig {
   MAX_REQUESTS_PER_MINUTE: number;
 }
 
-function validateEnv(): { demoMode: boolean } {
+function validateEnv(): { demoMode: boolean; hasSupabase: boolean } {
   // Check if demo mode is explicitly enabled or if API keys are missing
   const explicitDemoMode = process.env.DEMO_MODE === 'true';
   const hasSupabase = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
 
-  // Auto-enable demo mode if keys are missing
+  // Auto-enable demo mode if Anthropic key is missing
   const demoMode = explicitDemoMode || !hasAnthropic;
 
+  console.log('='.repeat(60));
+  console.log('📊 Financial Tracker - Stock Analysis API');
+  console.log('='.repeat(60));
+
   if (demoMode) {
-    console.log('='.repeat(60));
-    console.log('🎮 DEMO MODE ENABLED');
-    console.log('='.repeat(60));
-
-    if (!hasAnthropic) {
-      console.log('⚠️  ANTHROPIC_API_KEY not set - using mock AI responses');
-    }
-    if (!hasSupabase) {
-      console.log('⚠️  Supabase not configured - caching disabled');
-    }
-
-    console.log('');
-    console.log('To enable full functionality, set these in .env:');
-    if (!hasAnthropic) {
-      console.log('  ANTHROPIC_API_KEY=sk-ant-api03-...');
-    }
-    if (!hasSupabase) {
-      console.log('  SUPABASE_URL=https://xxx.supabase.co');
-      console.log('  SUPABASE_ANON_KEY=eyJ...');
-    }
-    console.log('='.repeat(60));
+    console.log('🎮 AI MODE: Demo (mock responses)');
   } else {
-    // Validate API key format when not in demo mode
-    const apiKey = process.env.ANTHROPIC_API_KEY || '';
-    if (apiKey && !apiKey.startsWith('sk-ant-')) {
-      console.warn(
-        'Warning: ANTHROPIC_API_KEY does not start with "sk-ant-". ' +
-        'Please verify your API key is correct.'
-      );
-    }
+    console.log('🤖 AI MODE: Claude API');
   }
 
-  return { demoMode };
+  if (hasSupabase) {
+    console.log('💾 DATABASE: Supabase connected');
+  } else {
+    console.log('⚠️  DATABASE: Not configured (no caching)');
+  }
+
+  if (!hasAnthropic && !explicitDemoMode) {
+    console.log('');
+    console.log('To enable real AI analysis:');
+    console.log('  ANTHROPIC_API_KEY=sk-ant-api03-...');
+  }
+
+  console.log('='.repeat(60));
+
+  return { demoMode, hasSupabase };
 }
 
 function parseOrigins(origins: string | undefined): string[] {

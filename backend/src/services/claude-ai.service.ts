@@ -143,7 +143,7 @@ function generateRandomMockData(ticker: string, sector?: string): Partial<IStock
       rsi: 30 + Math.floor(Math.random() * 40),
       macd: direction === 'bullish' ? 'positive' : direction === 'bearish' ? 'negative' : 'neutral',
       pe_ratio: Math.round((10 + Math.random() * 30) * 10) / 10,
-      volume_trend: ['increasing', 'decreasing', 'stable'][Math.floor(Math.random() * 3)],
+      volume_trend: (['increasing', 'decreasing', 'stable'] as const)[Math.floor(Math.random() * 3)],
     },
     risk_level: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high',
     confidence: 'low',

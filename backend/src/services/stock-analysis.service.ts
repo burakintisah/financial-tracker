@@ -1,7 +1,8 @@
 /**
  * Stock Analysis Service
  * Handles caching and database operations for stock analyses
- * In demo mode, caching is disabled and all analyses are fresh
+ * - Supabase: Used for caching if configured (independent of demo mode)
+ * - Demo mode: Only affects AI responses (mock vs real Claude API)
  */
 
 import { env } from '../config/env';
@@ -20,7 +21,7 @@ import {
 const isSupabaseConfigured = !!(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
 
 // Lazy load Supabase client only if configured
-let supabaseClient: ReturnType<typeof import('../config/supabase').default> | null = null;
+let supabaseClient: Awaited<typeof import('../config/supabase')>['default'] | null = null;
 
 async function getSupabaseClient() {
   if (!isSupabaseConfigured) return null;
@@ -169,7 +170,9 @@ export async function invalidateCache(
 
 /**
  * Gets or creates an analysis for a stock
- * In demo mode, always returns fresh mock data
+ * - First checks Supabase cache (if configured)
+ * - If not cached, fetches from AI (or mock in demo mode)
+ * - Saves to Supabase for future requests
  */
 export async function getOrCreateAnalysis(
   market: Market,
@@ -180,15 +183,18 @@ export async function getOrCreateAnalysis(
   if (isSupabaseConfigured) {
     const cachedAnalysis = await getCachedAnalysis(market, ticker, timeframe);
     if (cachedAnalysis) {
-      return { analysis: cachedAnalysis, cached: true, demoMode: false };
+      console.log(`[StockAnalysis] Cache HIT for ${market}:${ticker}:${timeframe}`);
+      return { analysis: cachedAnalysis, cached: true, demoMode: env.DEMO_MODE };
     }
+    console.log(`[StockAnalysis] Cache MISS for ${market}:${ticker}:${timeframe}`);
   }
 
   // Fetch fresh analysis (AI or mock in demo mode)
   const freshAnalysis = await analyzeStock(ticker, market, timeframe);
 
-  // Save to database if Supabase is configured (don't wait)
+  // Save to database if Supabase is configured
   if (isSupabaseConfigured) {
+    console.log(`[StockAnalysis] Saving to database: ${market}:${ticker}:${timeframe}`);
     saveAnalysis(freshAnalysis, freshAnalysis as IClaudeAnalysisResponse).catch((error) => {
       console.error('[StockAnalysisService] Background save failed:', error);
     });
@@ -224,7 +230,7 @@ export async function getRecentAnalyses(
       return [];
     }
 
-    return data.map((row) => dbRowToAnalysis(row as IStockAnalysisDB));
+    return data.map((row: IStockAnalysisDB) => dbRowToAnalysis(row));
   } catch (error) {
     console.error('[StockAnalysisService] Error fetching recent analyses:', error);
     return [];
