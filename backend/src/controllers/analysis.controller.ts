@@ -6,7 +6,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { getOrCreateAnalysis, getAnalysisStats, getTodayAnalyses } from '../services/stock-analysis.service';
-import { testAIService } from '../services/claude-ai.service';
+import { testAIService } from '../services/gemini-ai.service';
 import { getStocksByMarket, isValidTicker } from '../config/stocks';
 import { Market, Timeframe } from '../types/analysis.types';
 

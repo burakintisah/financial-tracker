@@ -22,10 +22,9 @@ interface EnvConfig {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
 
-  // Claude AI (optional in demo mode)
-  ANTHROPIC_API_KEY: string;
-  ANTHROPIC_MODEL: string;
-  ANTHROPIC_MAX_TOKENS: number;
+  // Gemini AI (optional in demo mode)
+  GEMINI_API_KEY: string;
+  GEMINI_MODEL: string;
 
   // Cache
   CACHE_TTL_HOURS: number;
@@ -38,10 +37,10 @@ function validateEnv(): { demoMode: boolean; hasSupabase: boolean } {
   // Check if demo mode is explicitly enabled or if API keys are missing
   const explicitDemoMode = process.env.DEMO_MODE === 'true';
   const hasSupabase = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
-  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+  const hasGemini = !!process.env.GEMINI_API_KEY;
 
-  // Auto-enable demo mode if Anthropic key is missing
-  const demoMode = explicitDemoMode || !hasAnthropic;
+  // Auto-enable demo mode if Gemini key is missing
+  const demoMode = explicitDemoMode || !hasGemini;
 
   console.log('='.repeat(60));
   console.log('📊 Financial Tracker - Stock Analysis API');
@@ -50,7 +49,7 @@ function validateEnv(): { demoMode: boolean; hasSupabase: boolean } {
   if (demoMode) {
     console.log('🎮 AI MODE: Demo (mock responses)');
   } else {
-    console.log('🤖 AI MODE: Claude API');
+    console.log('🤖 AI MODE: Gemini API');
   }
 
   if (hasSupabase) {
@@ -59,10 +58,11 @@ function validateEnv(): { demoMode: boolean; hasSupabase: boolean } {
     console.log('⚠️  DATABASE: Not configured (no caching)');
   }
 
-  if (!hasAnthropic && !explicitDemoMode) {
+  if (!hasGemini && !explicitDemoMode) {
     console.log('');
     console.log('To enable real AI analysis:');
-    console.log('  ANTHROPIC_API_KEY=sk-ant-api03-...');
+    console.log('  GEMINI_API_KEY=your-gemini-api-key');
+    console.log('  Get your free API key at: https://aistudio.google.com/apikey');
   }
 
   console.log('='.repeat(60));
@@ -94,10 +94,9 @@ function getEnvConfig(): EnvConfig {
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 
-    // Claude AI (empty if not set)
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
-    ANTHROPIC_MAX_TOKENS: parseInt(process.env.ANTHROPIC_MAX_TOKENS || '2000', 10),
+    // Gemini AI (empty if not set)
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
 
     // Cache
     CACHE_TTL_HOURS: parseInt(process.env.CACHE_TTL_HOURS || '24', 10),

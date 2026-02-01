@@ -6,7 +6,7 @@
  */
 
 import { env } from '../config/env';
-import { analyzeStock } from './claude-ai.service';
+import { analyzeStock } from './gemini-ai.service';
 import {
   IStockAnalysis,
   IStockAnalysisDB,
