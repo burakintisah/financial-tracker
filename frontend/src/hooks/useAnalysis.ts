@@ -18,6 +18,8 @@ interface UseAnalysisState {
   analyses: Map<string, IStockAnalysis>;
   isLoadingStocks: boolean;
   isLoadingAnalysis: boolean;
+  isGeneratingAll: boolean;
+  currentGeneratingTicker: string | null;
   error: string | null;
   selectedAnalysis: IStockAnalysis | null;
   selectedStock: IStockWithAnalysis | null;
@@ -29,6 +31,7 @@ interface UseAnalysisReturn extends UseAnalysisState {
   selectStock: (stock: IStockWithAnalysis) => void;
   clearSelection: () => void;
   refetch: () => void;
+  generateAllAnalyses: () => Promise<void>;
 }
 
 export function useAnalysis(market: Market): UseAnalysisReturn {
@@ -37,6 +40,8 @@ export function useAnalysis(market: Market): UseAnalysisReturn {
     analyses: new Map(),
     isLoadingStocks: true,
     isLoadingAnalysis: false,
+    isGeneratingAll: false,
+    currentGeneratingTicker: null,
     error: null,
     selectedAnalysis: null,
     selectedStock: null,
@@ -174,12 +179,60 @@ export function useAnalysis(market: Market): UseAnalysisReturn {
     fetchStocks();
   }, [fetchStocks]);
 
+  // Generate analysis for all stocks that don't have one today
+  const generateAllAnalyses = useCallback(async () => {
+    const stocksWithoutAnalysis = state.stocks.filter((s) => !s.hasAnalysisToday);
+
+    if (stocksWithoutAnalysis.length === 0) return;
+
+    setState((prev) => ({ ...prev, isGeneratingAll: true, error: null }));
+
+    for (const stock of stocksWithoutAnalysis) {
+      setState((prev) => ({ ...prev, currentGeneratingTicker: stock.ticker }));
+
+      try {
+        const { analysis } = await analysisApi.getAnalysis(market, stock.ticker, DEFAULT_TIMEFRAME);
+
+        setState((prev) => {
+          const newAnalyses = new Map(prev.analyses);
+          newAnalyses.set(stock.ticker, analysis);
+
+          const updatedStocks = prev.stocks.map((s) =>
+            s.ticker === stock.ticker
+              ? { ...s, hasAnalysisToday: true, analysis }
+              : s
+          );
+
+          return {
+            ...prev,
+            stocks: updatedStocks,
+            analyses: newAnalyses,
+            analysisCount: prev.analysisCount + 1,
+          };
+        });
+      } catch (error) {
+        console.error(`Failed to generate analysis for ${stock.ticker}:`, error);
+        // Continue with next stock even if one fails
+      }
+
+      // Small delay between requests to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    setState((prev) => ({
+      ...prev,
+      isGeneratingAll: false,
+      currentGeneratingTicker: null,
+    }));
+  }, [market, state.stocks]);
+
   return {
     ...state,
     fetchAnalysis,
     selectStock,
     clearSelection,
     refetch,
+    generateAllAnalyses,
   };
 }
 

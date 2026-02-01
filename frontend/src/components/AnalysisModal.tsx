@@ -41,6 +41,13 @@ function DirectionIndicator({ direction }: { direction: string }) {
   );
 }
 
+function formatPrice(price: number, market: string): string {
+  if (market === 'BIST') {
+    return `₺${price.toFixed(2)}`;
+  }
+  return `$${price.toFixed(2)}`;
+}
+
 export function AnalysisModal({
   isOpen,
   onClose,
@@ -143,15 +150,15 @@ export function AnalysisModal({
                   <div className="grid grid-cols-3 gap-4">
                     <MetricCard
                       label="Current Price"
-                      value={`$${analysis.prediction.current_price.toFixed(2)}`}
+                      value={formatPrice(analysis.prediction.current_price, analysis.market)}
                     />
                     <MetricCard
                       label="Target Low"
-                      value={`$${analysis.prediction.price_target_low.toFixed(2)}`}
+                      value={formatPrice(analysis.prediction.price_target_low, analysis.market)}
                     />
                     <MetricCard
                       label="Target High"
-                      value={`$${analysis.prediction.price_target_high.toFixed(2)}`}
+                      value={formatPrice(analysis.prediction.price_target_high, analysis.market)}
                     />
                   </div>
                 </div>
