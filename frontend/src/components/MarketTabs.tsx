@@ -18,7 +18,7 @@ export function MarketTabs({ selected, onChange, stockCounts }: MarketTabsProps)
   ];
 
   return (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-slate-200">
       <nav className="flex gap-4" aria-label="Market tabs">
         {markets.map(({ value, label }) => (
           <button
@@ -26,8 +26,8 @@ export function MarketTabs({ selected, onChange, stockCounts }: MarketTabsProps)
             onClick={() => onChange(value)}
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
               selected === value
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-navy-700 text-navy-800'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             }`}
           >
             {label}
@@ -35,8 +35,8 @@ export function MarketTabs({ selected, onChange, stockCounts }: MarketTabsProps)
               <span
                 className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                   selected === value
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-navy-100 text-navy-700'
+                    : 'bg-slate-100 text-slate-600'
                 }`}
               >
                 {stockCounts[value]}

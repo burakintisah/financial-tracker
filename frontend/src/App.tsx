@@ -50,47 +50,47 @@ function Navigation() {
   const isHome = location.pathname === '/';
 
   return (
-    <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20">
+    <nav className="bg-navy-900 border-b border-navy-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center gap-2 text-white font-bold text-xl">
-            <span>💰</span>
+            <span className="text-gold-400">📊</span>
             <span>Financial Tracker</span>
           </Link>
-          <div className="flex gap-4">
+          <div className="flex gap-2">
             <Link
               to="/"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isHome
-                  ? 'bg-white/20 text-white'
-                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+                  ? 'bg-navy-700 text-white shadow-sm'
+                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
               }`}
             >
               Home
             </Link>
             <Link
               to="/dashboard"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 location.pathname === '/dashboard'
-                  ? 'bg-white/20 text-white'
-                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+                  ? 'bg-navy-700 text-white shadow-sm'
+                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
               }`}
             >
               Dashboard
             </Link>
             <Link
               to="/analysis"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 location.pathname === '/analysis'
-                  ? 'bg-white/20 text-white'
-                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+                  ? 'bg-navy-700 text-white shadow-sm'
+                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
               }`}
             >
               Stock Analysis
             </Link>
             <Link
               to="/login"
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-white text-blue-600 hover:bg-blue-50 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-gold-500 text-navy-900 hover:bg-gold-400 transition-all duration-200"
             >
               Login
             </Link>
@@ -130,9 +130,9 @@ function HomePage() {
       <header className="pt-12 pb-8 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-            💰 Financial Tracker
+            <span className="text-gold-400">📊</span> Financial Tracker
           </h1>
-          <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-navy-200 max-w-2xl mx-auto">
             Take control of your finances. Track accounts, investments, and watch your wealth grow.
           </p>
         </div>
@@ -142,22 +142,22 @@ function HomePage() {
       <main className="px-4 pb-12">
         <div className="max-w-4xl mx-auto">
           {/* API Status Card */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8 border border-white/20">
+          <div className="bg-navy-800/80 backdrop-blur-lg rounded-xl p-6 mb-8 border border-navy-700">
             <h2 className="text-lg font-semibold text-white mb-3">API Status</h2>
             {loading ? (
               <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                <span className="text-blue-100">Checking API status...</span>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-gold-400 border-t-transparent" />
+                <span className="text-navy-200">Checking API status...</span>
               </div>
             ) : health ? (
               <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-300 font-medium">{health.message}</span>
+                <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-emerald-400 font-medium">{health.message}</span>
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-red-400 rounded-full" />
-                <span className="text-red-300">{error}</span>
+                <span className="text-red-400">{error}</span>
               </div>
             )}
           </div>
@@ -167,15 +167,15 @@ function HomePage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                className="bg-navy-800/80 backdrop-blur-lg rounded-xl p-6 border border-navy-700 hover:border-navy-600 transition-all duration-300 hover:shadow-lg hover:shadow-navy-900/50"
               >
                 <div className="text-4xl mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-blue-100 mb-4">{feature.description}</p>
+                <p className="text-navy-300 mb-4">{feature.description}</p>
                 {feature.link && (
                   <Link
                     to={feature.link}
-                    className="inline-flex items-center gap-1 text-yellow-300 hover:text-yellow-100 font-medium"
+                    className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300 font-medium transition-colors"
                   >
                     Try Now
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,14 +188,16 @@ function HomePage() {
           </div>
 
           {/* Get Started Section */}
-          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-lg rounded-2xl p-8 border border-green-400/30 text-center">
-            <h2 className="text-2xl font-bold text-white mb-3">🚀 Get Started</h2>
-            <p className="text-blue-100 mb-6">
+          <div className="bg-gradient-to-r from-navy-800 to-navy-700 backdrop-blur-lg rounded-xl p-8 border border-gold-500/30 text-center">
+            <h2 className="text-2xl font-bold text-white mb-3">
+              <span className="text-gold-400">🚀</span> Get Started
+            </h2>
+            <p className="text-navy-200 mb-6">
               Sign in with Google to start tracking your finances and investments.
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 text-navy-900 font-semibold rounded-lg hover:bg-gold-400 transition-colors"
             >
               <span>Sign In with Google</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,11 +217,11 @@ function AppContent() {
   const isProtectedPage = ['/dashboard', '/snapshots', '/snapshots/new'].includes(location.pathname) ||
     location.pathname.startsWith('/snapshots/');
   const isLoginPage = location.pathname === '/login';
-  const showGradientBackground = !isAnalysisPage && !isProtectedPage && !isLoginPage;
+  const showNavigation = !isAnalysisPage && !isProtectedPage && !isLoginPage;
 
   return (
-    <div className={`min-h-screen ${showGradientBackground ? 'bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800' : 'bg-gray-50'}`}>
-      {showGradientBackground && <Navigation />}
+    <div className={`min-h-screen ${isAnalysisPage || isProtectedPage ? 'bg-slate-50' : 'bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800'}`}>
+      {showNavigation && <Navigation />}
 
       <Routes>
         {/* Public routes */}
@@ -263,13 +265,13 @@ function AppContent() {
       </Routes>
 
       {/* Footer */}
-      {showGradientBackground && (
-        <footer className="py-6 px-4 border-t border-white/10">
+      {showNavigation && (
+        <footer className="py-6 px-4 bg-navy-950 border-t border-navy-800">
           <div className="max-w-4xl mx-auto text-center text-sm">
-            <p className="text-blue-200">
+            <p className="text-navy-400">
               Financial Tracker &copy; {new Date().getFullYear()}
             </p>
-            <p className="mt-1 text-blue-200">
+            <p className="mt-1 text-navy-500">
               by Burak Intisah
             </p>
           </div>
