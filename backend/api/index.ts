@@ -1,11 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Middleware
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
@@ -24,11 +20,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Start server for local development
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
+// Catch all for /api routes
+app.all('/api/*', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' });
+});
 
 export default app;
