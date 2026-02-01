@@ -41,14 +41,14 @@ export function AnalysisDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-navy-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
             AI-Powered Stock Analysis
           </h1>
-          <p className="text-blue-100 text-lg max-w-2xl">
+          <p className="text-navy-300 text-lg max-w-2xl">
             Get comprehensive stock analysis powered by Gemini AI. Select a market to
             view predictions, technical metrics, and key factors affecting your investments.
           </p>
@@ -66,8 +66,8 @@ export function AnalysisDashboard() {
               disabled={isGeneratingAll || pendingCount === 0 || isLoadingStocks}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 isGeneratingAll || pendingCount === 0 || isLoadingStocks
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  : 'bg-navy-800 text-white hover:bg-navy-700'
               }`}
             >
               {isGeneratingAll ? (
@@ -88,13 +88,13 @@ export function AnalysisDashboard() {
 
           {/* Status & Refresh */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-slate-500">
               {analysisCount} / {stocks.length} analyzed today
             </span>
             <button
               onClick={refetch}
               disabled={isGeneratingAll}
-              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm text-navy-600 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors disabled:opacity-50"
             >
               Refresh
             </button>
@@ -163,11 +163,11 @@ export function AnalysisDashboard() {
         )}
 
         {/* Info Banner */}
-        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-800 mb-2">
+        <div className="mt-12 bg-navy-50 border border-navy-200 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-navy-800 mb-2">
             About AI Stock Analysis
           </h3>
-          <p className="text-blue-700 text-sm leading-relaxed">
+          <p className="text-navy-600 text-sm leading-relaxed">
             Our AI-powered analysis uses Gemini to evaluate technical indicators, fundamental
             factors, and macro conditions to provide actionable insights. Analysis is generated
             once per day per stock. Use "Generate All" to analyze all stocks at once, or click
