@@ -96,7 +96,7 @@ function getEnvConfig(): EnvConfig {
 
     // Gemini AI (empty if not set)
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
 
     // Cache
     CACHE_TTL_HOURS: parseInt(process.env.CACHE_TTL_HOURS || '24', 10),
