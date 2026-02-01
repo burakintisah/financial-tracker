@@ -5,7 +5,7 @@
 
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { getOrCreateAnalysis, getAnalysisStats } from '../services/stock-analysis.service';
+import { getOrCreateAnalysis, getAnalysisStats, getTodayAnalyses } from '../services/stock-analysis.service';
 import { testAIService } from '../services/claude-ai.service';
 import { getStocksByMarket, isValidTicker } from '../config/stocks';
 import { Market, Timeframe } from '../types/analysis.types';
@@ -89,13 +89,16 @@ export async function getAnalysis(req: Request, res: Response): Promise<void> {
 /**
  * Get trending/popular stocks for a market
  * GET /api/analysis/trending/:market
+ * Returns stocks with their analysis if available for today
+ * One analysis per stock per day (uses default 3M timeframe)
  */
 export async function getTrendingStocks(req: Request, res: Response): Promise<void> {
   try {
     const marketParam = req.params.market?.toUpperCase();
-    const parseResult = marketSchema.safeParse(marketParam);
 
-    if (!parseResult.success) {
+    const marketResult = marketSchema.safeParse(marketParam);
+
+    if (!marketResult.success) {
       res.status(400).json({
         success: false,
         error: `Invalid market '${marketParam}'. Must be 'BIST' or 'US'`,
@@ -103,13 +106,27 @@ export async function getTrendingStocks(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const market = parseResult.data as Market;
+    const market = marketResult.data as Market;
     const stocks = getStocksByMarket(market);
+
+    // Get today's analyses for this market
+    const todayAnalyses = await getTodayAnalyses(market);
+
+    // Enhance stocks with analysis data if available
+    const stocksWithAnalysis = stocks.map((stock) => {
+      const analysis = todayAnalyses.get(stock.ticker);
+      return {
+        ...stock,
+        hasAnalysisToday: !!analysis,
+        analysis: analysis || null,
+      };
+    });
 
     res.json({
       success: true,
-      data: stocks,
+      data: stocksWithAnalysis,
       market,
+      analysisCount: todayAnalyses.size,
     });
   } catch (error) {
     console.error('[AnalysisController] Error getting trending stocks:', error);

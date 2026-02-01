@@ -8,7 +8,7 @@ import {
   Market,
   Timeframe,
   IStockAnalysis,
-  IStockInfo,
+  IStockWithAnalysis,
   IAnalysisResponse,
   ITrendingResponse,
   IHealthResponse,
@@ -57,9 +57,11 @@ export async function getAnalysis(
 }
 
 /**
- * Get trending stocks for a market
+ * Get trending stocks for a market with today's analysis status
  */
-export async function getTrendingStocks(market: Market): Promise<IStockInfo[]> {
+export async function getTrendingStocks(
+  market: Market
+): Promise<{ stocks: IStockWithAnalysis[]; analysisCount: number }> {
   try {
     const response = await apiClient.get<ITrendingResponse>(
       `/api/analysis/trending/${market}`
@@ -69,7 +71,10 @@ export async function getTrendingStocks(market: Market): Promise<IStockInfo[]> {
       throw new Error(response.data.error || 'Failed to get trending stocks');
     }
 
-    return response.data.data;
+    return {
+      stocks: response.data.data,
+      analysisCount: response.data.analysisCount || 0,
+    };
   } catch (error) {
     if (error instanceof AxiosError) {
       throw new Error(error.response?.data?.error || error.message);

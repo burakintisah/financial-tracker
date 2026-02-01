@@ -4,20 +4,17 @@
  */
 
 import { useState } from 'react';
-import { Market, Timeframe } from '../types/analysis.types';
+import { Market, IStockWithAnalysis } from '../types/analysis.types';
 import { useAnalysis } from '../hooks/useAnalysis';
-import { TimeframeSelector } from '../components/TimeframeSelector';
 import { MarketTabs } from '../components/MarketTabs';
 import { StockAnalysisCard } from '../components/StockAnalysisCard';
 import { AnalysisModal } from '../components/AnalysisModal';
 
 export function AnalysisDashboard() {
   const [market, setMarket] = useState<Market>('US');
-  const [timeframe, setTimeframe] = useState<Timeframe>('3M');
 
   const {
     stocks,
-    analyses,
     isLoadingStocks,
     isLoadingAnalysis,
     error,
@@ -26,7 +23,17 @@ export function AnalysisDashboard() {
     selectStock,
     clearSelection,
     refetch,
-  } = useAnalysis(market, timeframe);
+    analysisCount,
+  } = useAnalysis(market);
+
+  // Create a placeholder stock for loading skeleton
+  const placeholderStock: IStockWithAnalysis = {
+    ticker: '',
+    name: '',
+    sector: '',
+    hasAnalysisToday: false,
+    analysis: null,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -47,8 +54,10 @@ export function AnalysisDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <TimeframeSelector selected={timeframe} onChange={setTimeframe} />
+        <div className="flex justify-end items-center gap-4 mb-8">
+          <span className="text-sm text-gray-500">
+            {analysisCount} / {stocks.length} analyzed today
+          </span>
           <button
             onClick={refetch}
             className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
@@ -94,7 +103,7 @@ export function AnalysisDashboard() {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <StockAnalysisCard
                   key={i}
-                  stockInfo={{ ticker: '', name: '', sector: '' }}
+                  stockInfo={placeholderStock}
                   isLoading
                 />
               ))
@@ -102,7 +111,6 @@ export function AnalysisDashboard() {
                 <StockAnalysisCard
                   key={stock.ticker}
                   stockInfo={stock}
-                  analysis={analyses.get(stock.ticker)}
                   onViewDetails={() => selectStock(stock)}
                 />
               ))}
@@ -126,9 +134,9 @@ export function AnalysisDashboard() {
           </h3>
           <p className="text-blue-700 text-sm leading-relaxed">
             Our AI-powered analysis uses Claude to evaluate technical indicators, fundamental
-            factors, and macro conditions to provide actionable insights. Analysis results are
-            cached for 24 hours to ensure quick access. Remember that all predictions are based
-            on historical data and should not be considered as financial advice.
+            factors, and macro conditions to provide actionable insights. Analysis is generated
+            once per day per stock. If analysis exists for today, you'll see the results directly.
+            Otherwise, click "Generate Analysis" to create a new analysis.
           </p>
         </div>
       </div>

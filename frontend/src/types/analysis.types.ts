@@ -42,17 +42,25 @@ export interface IStockInfo {
   sector: string;
 }
 
+export interface IStockWithAnalysis extends IStockInfo {
+  hasAnalysisToday: boolean;
+  analysis: IStockAnalysis | null;
+}
+
 export interface IAnalysisResponse {
   success: boolean;
   data?: IStockAnalysis;
   cached?: boolean;
+  demoMode?: boolean;
   error?: string;
 }
 
 export interface ITrendingResponse {
   success: boolean;
-  data?: IStockInfo[];
+  data?: IStockWithAnalysis[];
   market?: Market;
+  timeframe?: Timeframe;
+  analysisCount?: number;
   error?: string;
 }
 
