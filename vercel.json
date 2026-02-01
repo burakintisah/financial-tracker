@@ -3,11 +3,12 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build:fe",
   "outputDirectory": "frontend/dist",
-  "functions": {
-    "backend/src/index.ts": {
-      "runtime": "@vercel/node"
+  "builds": [
+    {
+      "src": "backend/src/index.ts",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/backend/src/index.ts" }
   ]
