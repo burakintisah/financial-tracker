@@ -1,7 +1,15 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { AnalysisDashboard } from './pages/AnalysisDashboard';
+import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { SnapshotsPage } from './pages/SnapshotsPage';
+import { SnapshotDetailPage } from './pages/SnapshotDetailPage';
+import { CreateSnapshotPage } from './pages/CreateSnapshotPage';
 
 interface HealthStatus {
   status: string;
@@ -21,6 +29,7 @@ const features: FeatureCard[] = [
     icon: '📊',
     title: 'Track Everything',
     description: 'Monitor all your bank accounts, investments, and crypto in one place.',
+    link: '/dashboard',
   },
   {
     icon: '🤖',
@@ -32,6 +41,7 @@ const features: FeatureCard[] = [
     icon: '📈',
     title: 'Visualize Trends',
     description: 'See how your wealth grows over time with beautiful charts.',
+    link: '/dashboard',
   },
 ];
 
@@ -59,14 +69,30 @@ function Navigation() {
               Home
             </Link>
             <Link
+              to="/dashboard"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname === '/dashboard'
+                  ? 'bg-white/20 text-white'
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Dashboard
+            </Link>
+            <Link
               to="/analysis"
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                !isHome
+                location.pathname === '/analysis'
                   ? 'bg-white/20 text-white'
                   : 'text-blue-100 hover:text-white hover:bg-white/10'
               }`}
             >
               Stock Analysis
+            </Link>
+            <Link
+              to="/login"
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-white text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              Login
             </Link>
           </div>
         </div>
@@ -161,26 +187,21 @@ function HomePage() {
             ))}
           </div>
 
-          {/* Coming Soon Section */}
-          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-lg rounded-2xl p-8 border border-yellow-400/30 text-center">
-            <h2 className="text-2xl font-bold text-white mb-3">🚀 Coming Soon</h2>
-            <p className="text-blue-100 mb-4">
-              We're building something amazing! Soon you'll be able to:
+          {/* Get Started Section */}
+          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-lg rounded-2xl p-8 border border-green-400/30 text-center">
+            <h2 className="text-2xl font-bold text-white mb-3">🚀 Get Started</h2>
+            <p className="text-blue-100 mb-6">
+              Sign in with Google to start tracking your finances and investments.
             </p>
-            <ul className="text-left inline-block text-blue-100 space-y-2">
-              <li className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span> Import data from Excel files
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span> View interactive charts and reports
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span> Track multiple currencies
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span> Compare snapshots over time
-              </li>
-            </ul>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <span>Sign In with Google</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       </main>
@@ -191,35 +212,69 @@ function HomePage() {
 function AppContent() {
   const location = useLocation();
   const isAnalysisPage = location.pathname === '/analysis';
+  const isProtectedPage = ['/dashboard', '/snapshots', '/snapshots/new'].includes(location.pathname) ||
+    location.pathname.startsWith('/snapshots/');
+  const isLoginPage = location.pathname === '/login';
+  const showGradientBackground = !isAnalysisPage && !isProtectedPage && !isLoginPage;
 
   return (
-    <div className={`min-h-screen ${isAnalysisPage ? 'bg-gray-50' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800'}`}>
-      {!isAnalysisPage && <Navigation />}
+    <div className={`min-h-screen ${showGradientBackground ? 'bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800' : 'bg-gray-50'}`}>
+      {showGradientBackground && <Navigation />}
 
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/analysis" element={<AnalysisDashboard />} />
+
+        {/* Protected routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots"
+          element={
+            <ProtectedRoute>
+              <SnapshotsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots/new"
+          element={
+            <ProtectedRoute>
+              <CreateSnapshotPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots/:id"
+          element={
+            <ProtectedRoute>
+              <SnapshotDetailPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
       {/* Footer */}
-      <footer className={`py-6 px-4 ${isAnalysisPage ? 'bg-gray-100 border-t border-gray-200' : 'border-t border-white/10'}`}>
-        <div className="max-w-4xl mx-auto text-center text-sm">
-          <p className={isAnalysisPage ? 'text-gray-600' : 'text-blue-200'}>
-            Financial Tracker &copy; {new Date().getFullYear()}
-          </p>
-          <p className={`mt-1 ${isAnalysisPage ? 'text-gray-500' : 'text-blue-200'}`}>
-            by Burak Intisah
-          </p>
-          {isAnalysisPage && (
-            <Link
-              to="/"
-              className="mt-2 inline-block text-blue-600 hover:text-blue-800"
-            >
-              Back to Home
-            </Link>
-          )}
-        </div>
-      </footer>
+      {showGradientBackground && (
+        <footer className="py-6 px-4 border-t border-white/10">
+          <div className="max-w-4xl mx-auto text-center text-sm">
+            <p className="text-blue-200">
+              Financial Tracker &copy; {new Date().getFullYear()}
+            </p>
+            <p className="mt-1 text-blue-200">
+              by Burak Intisah
+            </p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
@@ -227,7 +282,19 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
+      </AuthProvider>
     </Router>
   );
 }
