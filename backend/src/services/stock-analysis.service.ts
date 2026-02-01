@@ -286,10 +286,10 @@ export async function getAnalysisStats(): Promise<{
 /**
  * Gets today's analyses for a market
  * Returns a map of ticker -> analysis for stocks that have analysis today
+ * One analysis per stock per day (no timeframe filtering)
  */
 export async function getTodayAnalyses(
-  market: Market,
-  timeframe: Timeframe
+  market: Market
 ): Promise<Map<string, IStockAnalysis>> {
   const client = await getSupabaseClient();
   const result = new Map<string, IStockAnalysis>();
@@ -303,7 +303,6 @@ export async function getTodayAnalyses(
       .from('stock_analyses')
       .select('*')
       .eq('market', market)
-      .eq('timeframe', timeframe)
       .eq('analysis_date', today);
 
     if (error || !data) {
@@ -316,7 +315,7 @@ export async function getTodayAnalyses(
       result.set(analysis.ticker, analysis);
     }
 
-    console.log(`[StockAnalysis] Found ${result.size} analyses for ${market}/${timeframe} today`);
+    console.log(`[StockAnalysis] Found ${result.size} analyses for ${market} today`);
     return result;
   } catch (error) {
     console.error('[StockAnalysisService] Error fetching today analyses:', error);

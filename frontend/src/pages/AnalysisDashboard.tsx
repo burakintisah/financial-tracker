@@ -4,16 +4,14 @@
  */
 
 import { useState } from 'react';
-import { Market, Timeframe, IStockWithAnalysis } from '../types/analysis.types';
+import { Market, IStockWithAnalysis } from '../types/analysis.types';
 import { useAnalysis } from '../hooks/useAnalysis';
-import { TimeframeSelector } from '../components/TimeframeSelector';
 import { MarketTabs } from '../components/MarketTabs';
 import { StockAnalysisCard } from '../components/StockAnalysisCard';
 import { AnalysisModal } from '../components/AnalysisModal';
 
 export function AnalysisDashboard() {
   const [market, setMarket] = useState<Market>('US');
-  const [timeframe, setTimeframe] = useState<Timeframe>('3M');
 
   const {
     stocks,
@@ -26,7 +24,7 @@ export function AnalysisDashboard() {
     clearSelection,
     refetch,
     analysisCount,
-  } = useAnalysis(market, timeframe);
+  } = useAnalysis(market);
 
   // Create a placeholder stock for loading skeleton
   const placeholderStock: IStockWithAnalysis = {
@@ -56,19 +54,16 @@ export function AnalysisDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <TimeframeSelector selected={timeframe} onChange={setTimeframe} />
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">
-              {analysisCount} / {stocks.length} analyzed today
-            </span>
-            <button
-              onClick={refetch}
-              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              Refresh
-            </button>
-          </div>
+        <div className="flex justify-end items-center gap-4 mb-8">
+          <span className="text-sm text-gray-500">
+            {analysisCount} / {stocks.length} analyzed today
+          </span>
+          <button
+            onClick={refetch}
+            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            Refresh
+          </button>
         </div>
 
         {/* Market Tabs */}

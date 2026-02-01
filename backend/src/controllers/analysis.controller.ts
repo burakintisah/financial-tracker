@@ -88,16 +88,15 @@ export async function getAnalysis(req: Request, res: Response): Promise<void> {
 
 /**
  * Get trending/popular stocks for a market
- * GET /api/analysis/trending/:market?timeframe=3M
+ * GET /api/analysis/trending/:market
  * Returns stocks with their analysis if available for today
+ * One analysis per stock per day (uses default 3M timeframe)
  */
 export async function getTrendingStocks(req: Request, res: Response): Promise<void> {
   try {
     const marketParam = req.params.market?.toUpperCase();
-    const timeframeParam = (req.query.timeframe as string)?.toUpperCase() || '3M';
 
     const marketResult = marketSchema.safeParse(marketParam);
-    const timeframeResult = timeframeSchema.safeParse(timeframeParam);
 
     if (!marketResult.success) {
       res.status(400).json({
@@ -107,20 +106,11 @@ export async function getTrendingStocks(req: Request, res: Response): Promise<vo
       return;
     }
 
-    if (!timeframeResult.success) {
-      res.status(400).json({
-        success: false,
-        error: `Invalid timeframe '${timeframeParam}'. Must be '1M', '3M', or '6M'`,
-      });
-      return;
-    }
-
     const market = marketResult.data as Market;
-    const timeframe = timeframeResult.data as Timeframe;
     const stocks = getStocksByMarket(market);
 
-    // Get today's analyses for this market/timeframe
-    const todayAnalyses = await getTodayAnalyses(market, timeframe);
+    // Get today's analyses for this market
+    const todayAnalyses = await getTodayAnalyses(market);
 
     // Enhance stocks with analysis data if available
     const stocksWithAnalysis = stocks.map((stock) => {
@@ -136,7 +126,6 @@ export async function getTrendingStocks(req: Request, res: Response): Promise<vo
       success: true,
       data: stocksWithAnalysis,
       market,
-      timeframe,
       analysisCount: todayAnalyses.size,
     });
   } catch (error) {

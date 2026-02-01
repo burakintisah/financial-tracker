@@ -7,10 +7,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { analysisApi } from '../services/analysis.api';
 import {
   Market,
-  Timeframe,
   IStockAnalysis,
   IStockWithAnalysis,
 } from '../types/analysis.types';
+
+const DEFAULT_TIMEFRAME = '3M' as const;
 
 interface UseAnalysisState {
   stocks: IStockWithAnalysis[];
@@ -30,7 +31,7 @@ interface UseAnalysisReturn extends UseAnalysisState {
   refetch: () => void;
 }
 
-export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisReturn {
+export function useAnalysis(market: Market): UseAnalysisReturn {
   const [state, setState] = useState<UseAnalysisState>({
     stocks: [],
     analyses: new Map(),
@@ -47,7 +48,7 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
     setState((prev) => ({ ...prev, isLoadingStocks: true, error: null }));
 
     try {
-      const { stocks, analysisCount } = await analysisApi.getTrendingStocks(market, timeframe);
+      const { stocks, analysisCount } = await analysisApi.getTrendingStocks(market);
 
       // Pre-populate analyses map with today's data
       const analysesMap = new Map<string, IStockAnalysis>();
@@ -71,7 +72,7 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
         error: error instanceof Error ? error.message : 'Failed to fetch stocks',
       }));
     }
-  }, [market, timeframe]);
+  }, [market]);
 
   useEffect(() => {
     fetchStocks();
@@ -102,7 +103,7 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
       }));
 
       try {
-        const { analysis } = await analysisApi.getAnalysis(market, ticker, timeframe);
+        const { analysis } = await analysisApi.getAnalysis(market, ticker, DEFAULT_TIMEFRAME);
 
         setState((prev) => {
           const newAnalyses = new Map(prev.analyses);
@@ -132,7 +133,7 @@ export function useAnalysis(market: Market, timeframe: Timeframe): UseAnalysisRe
         }));
       }
     },
-    [market, timeframe, state.stocks]
+    [market, state.stocks]
   );
 
   // Select a stock for viewing

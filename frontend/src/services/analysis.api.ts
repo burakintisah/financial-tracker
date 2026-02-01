@@ -60,12 +60,11 @@ export async function getAnalysis(
  * Get trending stocks for a market with today's analysis status
  */
 export async function getTrendingStocks(
-  market: Market,
-  timeframe: Timeframe
+  market: Market
 ): Promise<{ stocks: IStockWithAnalysis[]; analysisCount: number }> {
   try {
     const response = await apiClient.get<ITrendingResponse>(
-      `/api/analysis/trending/${market}?timeframe=${timeframe}`
+      `/api/analysis/trending/${market}`
     );
 
     if (!response.data.success || !response.data.data) {
