@@ -46,16 +46,16 @@ function RiskBadge({ level }: { level: string }) {
 
 function ProbabilityBar({ probability }: { probability: number }) {
   const color =
-    probability >= 70 ? 'bg-green-500' :
-    probability >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+    probability >= 70 ? 'bg-emerald-500' :
+    probability >= 50 ? 'bg-amber-500' : 'bg-red-500';
 
   return (
     <div className="w-full">
       <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-600">Probability</span>
-        <span className="font-medium">{probability}%</span>
+        <span className="text-slate-600">Probability</span>
+        <span className="font-medium text-slate-800">{probability}%</span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-slate-200 rounded-full h-2">
         <div
           className={`h-2 rounded-full transition-all duration-300 ${color}`}
           style={{ width: `${probability}%` }}
@@ -67,18 +67,18 @@ function ProbabilityBar({ probability }: { probability: number }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 animate-pulse">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-32"></div>
+          <div className="h-6 bg-slate-200 rounded w-24 mb-2"></div>
+          <div className="h-4 bg-slate-200 rounded w-32"></div>
         </div>
-        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+        <div className="h-6 bg-slate-200 rounded-full w-20"></div>
       </div>
       <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full"></div>
-        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-        <div className="h-8 bg-gray-200 rounded w-full mt-4"></div>
+        <div className="h-4 bg-slate-200 rounded w-full"></div>
+        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+        <div className="h-8 bg-slate-200 rounded w-full mt-4"></div>
       </div>
     </div>
   );
@@ -91,14 +91,14 @@ function AnalysisContent({ analysis, onViewDetails }: { analysis: IStockAnalysis
 
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <span className="text-gray-500">Target Low</span>
-          <p className="font-medium text-gray-800">
+          <span className="text-slate-500">Target Low</span>
+          <p className="font-medium text-slate-800">
             ${analysis.prediction.price_target_low.toFixed(2)}
           </p>
         </div>
         <div>
-          <span className="text-gray-500">Target High</span>
-          <p className="font-medium text-gray-800">
+          <span className="text-slate-500">Target High</span>
+          <p className="font-medium text-slate-800">
             ${analysis.prediction.price_target_high.toFixed(2)}
           </p>
         </div>
@@ -106,16 +106,16 @@ function AnalysisContent({ analysis, onViewDetails }: { analysis: IStockAnalysis
 
       <div className="mt-4 flex items-center justify-between">
         <RiskBadge level={analysis.risk_level} />
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-slate-400">
           Confidence: {analysis.confidence}
         </span>
       </div>
 
-      <p className="mt-4 text-sm text-gray-600 line-clamp-2">{analysis.summary}</p>
+      <p className="mt-4 text-sm text-slate-600 line-clamp-2">{analysis.summary}</p>
 
       <button
         onClick={onViewDetails}
-        className="mt-4 w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+        className="mt-4 w-full py-2 px-4 bg-navy-50 text-navy-700 rounded-lg font-medium hover:bg-navy-100 transition-colors"
       >
         View Details
       </button>
@@ -126,10 +126,10 @@ function AnalysisContent({ analysis, onViewDetails }: { analysis: IStockAnalysis
 function NoAnalysisContent({ onViewDetails }: { onViewDetails?: () => void }) {
   return (
     <div className="mt-4">
-      <p className="text-sm text-gray-500 mb-4">No analysis for today yet</p>
+      <p className="text-sm text-slate-500 mb-4">No analysis for today yet</p>
       <button
         onClick={onViewDetails}
-        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+        className="w-full py-2 px-4 bg-navy-800 text-white rounded-lg font-medium hover:bg-navy-700 transition-colors"
       >
         Generate Analysis
       </button>
@@ -149,12 +149,12 @@ export function StockAnalysisCard({
   const { hasAnalysisToday, analysis } = stockInfo;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-800 font-mono">{stockInfo.ticker}</h3>
-          <p className="text-sm text-gray-600">{stockInfo.name}</p>
-          <p className="text-xs text-gray-400">{stockInfo.sector}</p>
+          <h3 className="text-lg font-bold text-navy-800 font-mono">{stockInfo.ticker}</h3>
+          <p className="text-sm text-slate-600">{stockInfo.name}</p>
+          <p className="text-xs text-slate-400">{stockInfo.sector}</p>
         </div>
         {hasAnalysisToday && analysis && (
           <PredictionBadge direction={analysis.prediction.direction} />
