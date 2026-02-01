@@ -17,6 +17,8 @@ export function AnalysisDashboard() {
     stocks,
     isLoadingStocks,
     isLoadingAnalysis,
+    isGeneratingAll,
+    currentGeneratingTicker,
     error,
     selectedAnalysis,
     selectedStock,
@@ -24,7 +26,10 @@ export function AnalysisDashboard() {
     clearSelection,
     refetch,
     analysisCount,
+    generateAllAnalyses,
   } = useAnalysis(market);
+
+  const pendingCount = stocks.filter((s) => !s.hasAnalysisToday).length;
 
   // Create a placeholder stock for loading skeleton
   const placeholderStock: IStockWithAnalysis = {
@@ -44,9 +49,8 @@ export function AnalysisDashboard() {
             AI-Powered Stock Analysis
           </h1>
           <p className="text-blue-100 text-lg max-w-2xl">
-            Get comprehensive stock analysis powered by Claude AI. Select a market and
-            timeframe to view predictions, technical metrics, and key factors affecting
-            your investments.
+            Get comprehensive stock analysis powered by Gemini AI. Select a market to
+            view predictions, technical metrics, and key factors affecting your investments.
           </p>
         </div>
       </div>
@@ -54,16 +58,47 @@ export function AnalysisDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Controls */}
-        <div className="flex justify-end items-center gap-4 mb-8">
-          <span className="text-sm text-gray-500">
-            {analysisCount} / {stocks.length} analyzed today
-          </span>
-          <button
-            onClick={refetch}
-            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            Refresh
-          </button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          {/* Generate All Button */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={generateAllAnalyses}
+              disabled={isGeneratingAll || pendingCount === 0 || isLoadingStocks}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                isGeneratingAll || pendingCount === 0 || isLoadingStocks
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+              }`}
+            >
+              {isGeneratingAll ? (
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Generating... ({currentGeneratingTicker})
+                </span>
+              ) : pendingCount === 0 ? (
+                'All Analyzed'
+              ) : (
+                `Generate All (${pendingCount})`
+              )}
+            </button>
+          </div>
+
+          {/* Status & Refresh */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-500">
+              {analysisCount} / {stocks.length} analyzed today
+            </span>
+            <button
+              onClick={refetch}
+              disabled={isGeneratingAll}
+              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Market Tabs */}
@@ -133,10 +168,10 @@ export function AnalysisDashboard() {
             About AI Stock Analysis
           </h3>
           <p className="text-blue-700 text-sm leading-relaxed">
-            Our AI-powered analysis uses Claude to evaluate technical indicators, fundamental
+            Our AI-powered analysis uses Gemini to evaluate technical indicators, fundamental
             factors, and macro conditions to provide actionable insights. Analysis is generated
-            once per day per stock. If analysis exists for today, you'll see the results directly.
-            Otherwise, click "Generate Analysis" to create a new analysis.
+            once per day per stock. Use "Generate All" to analyze all stocks at once, or click
+            individual stocks to generate their analysis.
           </p>
         </div>
       </div>
