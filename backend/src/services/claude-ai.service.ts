@@ -1,9 +1,10 @@
 /**
  * Claude AI Service
  * Handles AI-powered stock analysis using Anthropic's Claude API
+ * Supports demo mode with realistic mock data when API key is not available
  */
 
-import anthropicClient, { claudeConfig } from '../config/claude';
+import { env } from '../config/env';
 import { getStockInfo } from '../config/stocks';
 import {
   IStockAnalysis,
@@ -15,174 +16,140 @@ import {
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
+// Demo mode mock data generator
+const MOCK_DATA: Record<string, Partial<IStockAnalysis>> = {
+  // US Stocks
+  'AAPL': {
+    prediction: { direction: 'bullish', probability: 72, price_target_low: 185, price_target_high: 210, current_price: 178 },
+    metrics: { rsi: 58, macd: 'positive', pe_ratio: 28.5, volume_trend: 'increasing' },
+    risk_level: 'medium', confidence: 'high',
+    summary: 'Apple continues to show strong momentum driven by iPhone sales and services growth. AI integration in upcoming products could be a major catalyst.',
+    key_factors: ['Strong iPhone 15 sales', 'Services revenue growth', 'AI features in iOS 18', 'Stock buyback program']
+  },
+  'MSFT': {
+    prediction: { direction: 'bullish', probability: 78, price_target_low: 420, price_target_high: 480, current_price: 415 },
+    metrics: { rsi: 62, macd: 'positive', pe_ratio: 35.2, volume_trend: 'stable' },
+    risk_level: 'low', confidence: 'high',
+    summary: 'Microsoft benefits from Azure cloud growth and Copilot AI integration across products. Enterprise demand remains strong.',
+    key_factors: ['Azure cloud growth 29%', 'Copilot AI adoption', 'Office 365 expansion', 'Gaming division growth']
+  },
+  'NVDA': {
+    prediction: { direction: 'bullish', probability: 68, price_target_low: 800, price_target_high: 950, current_price: 875 },
+    metrics: { rsi: 71, macd: 'positive', pe_ratio: 65.3, volume_trend: 'increasing' },
+    risk_level: 'high', confidence: 'medium',
+    summary: 'NVIDIA dominates AI chip market but high valuation brings volatility risk. Data center demand continues to exceed supply.',
+    key_factors: ['AI chip demand surge', 'Data center revenue growth', 'High valuation concerns', 'Competition from AMD']
+  },
+  'GOOGL': {
+    prediction: { direction: 'bullish', probability: 65, price_target_low: 155, price_target_high: 180, current_price: 152 },
+    metrics: { rsi: 52, macd: 'neutral', pe_ratio: 24.8, volume_trend: 'stable' },
+    risk_level: 'medium', confidence: 'medium',
+    summary: 'Google faces AI competition but maintains strong search dominance. Cloud growth and YouTube ads provide diversification.',
+    key_factors: ['Search market dominance', 'Gemini AI development', 'YouTube ad recovery', 'Antitrust concerns']
+  },
+  'TSLA': {
+    prediction: { direction: 'neutral', probability: 50, price_target_low: 180, price_target_high: 250, current_price: 215 },
+    metrics: { rsi: 45, macd: 'negative', pe_ratio: 58.7, volume_trend: 'decreasing' },
+    risk_level: 'high', confidence: 'low',
+    summary: 'Tesla faces margin pressure from price cuts and increased competition. FSD and energy storage offer long-term potential.',
+    key_factors: ['EV price competition', 'Margin compression', 'FSD progress', 'Energy storage growth']
+  },
+  // BIST Stocks
+  'ASELS.IS': {
+    prediction: { direction: 'bullish', probability: 70, price_target_low: 85, price_target_high: 105, current_price: 82 },
+    metrics: { rsi: 55, macd: 'positive', pe_ratio: 18.5, volume_trend: 'increasing' },
+    risk_level: 'medium', confidence: 'high',
+    summary: 'ASELSAN benefits from increased defense spending and new export contracts. Strong order backlog supports growth outlook.',
+    key_factors: ['New defense contracts', 'Export market expansion', 'R&D investments', 'Government support']
+  },
+  'THYAO.IS': {
+    prediction: { direction: 'bullish', probability: 68, price_target_low: 280, price_target_high: 340, current_price: 275 },
+    metrics: { rsi: 58, macd: 'positive', pe_ratio: 5.2, volume_trend: 'stable' },
+    risk_level: 'medium', confidence: 'medium',
+    summary: 'Turkish Airlines shows strong passenger growth and cargo demand. New fleet deliveries and hub expansion drive capacity.',
+    key_factors: ['Passenger traffic growth', 'Cargo revenue increase', 'Fleet expansion', 'Istanbul hub advantage']
+  },
+  'GARAN.IS': {
+    prediction: { direction: 'neutral', probability: 55, price_target_low: 95, price_target_high: 120, current_price: 105 },
+    metrics: { rsi: 48, macd: 'neutral', pe_ratio: 3.8, volume_trend: 'stable' },
+    risk_level: 'medium', confidence: 'medium',
+    summary: 'Garanti BBVA maintains solid fundamentals but faces macro uncertainty. Interest rate environment impacts net interest margin.',
+    key_factors: ['Interest rate sensitivity', 'Asset quality stable', 'Digital banking growth', 'Currency volatility']
+  },
+};
+
 /**
- * Generates the analysis prompt for Claude
+ * Generates realistic mock analysis for demo mode
  */
-function generateAnalysisPrompt(
+function generateMockAnalysis(
   ticker: string,
   market: Market,
-  timeframe: Timeframe,
-  today: string
-): string {
-  return `You are a financial analyst. Analyze the following stock for a ${timeframe} outlook.
+  timeframe: Timeframe
+): IStockAnalysis {
+  const today = new Date().toISOString().split('T')[0];
+  const stockInfo = getStockInfo(market, ticker);
 
-### Stock Details:
-- **Market:** ${market} (${market === 'BIST' ? 'Istanbul Stock Exchange' : 'US Stock Market'})
-- **Ticker:** ${ticker}
-- **Timeframe:** ${timeframe} (${timeframe === '1M' ? '1 Month' : timeframe === '3M' ? '3 Months' : '6 Months'})
-- **Analysis Date:** ${today}
+  // Get predefined mock data or generate random
+  const mockData = MOCK_DATA[ticker] || generateRandomMockData(ticker, stockInfo?.sector);
 
-### Your Task:
+  // Adjust probability based on timeframe (longer = more uncertainty)
+  const timeframeAdjustment = timeframe === '1M' ? 5 : timeframe === '3M' ? 0 : -5;
+  const adjustedProbability = Math.min(95, Math.max(30,
+    (mockData.prediction?.probability || 60) + timeframeAdjustment
+  ));
 
-1. **Technical Analysis Metrics:**
-   - RSI (Relative Strength Index)
-   - MACD
-   - Moving Averages (50-day, 200-day)
-   - Support/Resistance levels
-   - Volume trends
-
-2. **Fundamental Factors:**
-   - P/E Ratio
-   - Sector performance
-   - Recent quarterly results
-   - Major news/developments
-
-3. **Macro Factors:**
-   - Overall market trend
-   - Interest rates
-   - Currency impacts (important for BIST)
-   - Global economic conditions
-
-4. **Prediction & Recommendation:**
-   - Expected price range in ${timeframe}
-   - Upside probability (%)
-   - Risk level (Low/Medium/High)
-   - Brief summary (2-3 sentences)
-
-### Response Format (JSON ONLY):
-\`\`\`json
-{
-  "ticker": "${ticker}",
-  "market": "${market}",
-  "timeframe": "${timeframe}",
-  "analysis_date": "${today}",
-  "prediction": {
-    "direction": "bullish",
-    "probability": 75,
-    "price_target_low": 85.5,
-    "price_target_high": 95.0,
-    "current_price": 80.0
-  },
-  "metrics": {
-    "rsi": 58,
-    "macd": "positive",
-    "pe_ratio": 12.5,
-    "volume_trend": "increasing"
-  },
-  "risk_level": "medium",
-  "summary": "Brief 2-3 sentence analysis summary here.",
-  "key_factors": [
-    "Factor 1",
-    "Factor 2",
-    "Factor 3"
-  ],
-  "confidence": "high"
-}
-\`\`\`
-
-**IMPORTANT:** Return ONLY the JSON response, no additional explanation. Ensure all numeric values are realistic based on current market conditions.`;
+  return {
+    ticker,
+    market,
+    timeframe,
+    analysis_date: today,
+    prediction: {
+      direction: mockData.prediction?.direction || 'neutral',
+      probability: adjustedProbability,
+      price_target_low: mockData.prediction?.price_target_low || 100,
+      price_target_high: mockData.prediction?.price_target_high || 120,
+      current_price: mockData.prediction?.current_price || 110,
+    },
+    metrics: {
+      rsi: mockData.metrics?.rsi || 50,
+      macd: mockData.metrics?.macd || 'neutral',
+      pe_ratio: mockData.metrics?.pe_ratio || 15,
+      volume_trend: mockData.metrics?.volume_trend || 'stable',
+    },
+    risk_level: mockData.risk_level || 'medium',
+    summary: mockData.summary || `${ticker} analysis is currently in demo mode. Connect Anthropic API for real AI-powered insights.`,
+    key_factors: mockData.key_factors || ['Demo mode active', 'Connect API for real analysis', 'Market data simulated'],
+    confidence: mockData.confidence || 'medium',
+  };
 }
 
 /**
- * Parses and validates the AI response
+ * Generates random mock data for stocks not in predefined list
  */
-function parseAIResponse(responseText: string): IClaudeAnalysisResponse {
-  // Extract JSON from the response (handle potential markdown code blocks)
-  let jsonStr = responseText.trim();
+function generateRandomMockData(ticker: string, sector?: string): Partial<IStockAnalysis> {
+  const directions: Array<'bullish' | 'bearish' | 'neutral'> = ['bullish', 'bearish', 'neutral'];
+  const direction = directions[Math.floor(Math.random() * 3)];
+  const basePrice = 50 + Math.random() * 200;
 
-  // Remove markdown code blocks if present
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (jsonMatch) {
-    jsonStr = jsonMatch[1].trim();
-  }
-
-  try {
-    const parsed = JSON.parse(jsonStr);
-
-    // Validate required fields
-    const requiredFields = [
-      'ticker',
-      'market',
-      'timeframe',
-      'analysis_date',
-      'prediction',
-      'metrics',
-      'risk_level',
-      'summary',
-      'key_factors',
-      'confidence',
-    ];
-
-    for (const field of requiredFields) {
-      if (!(field in parsed)) {
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
-
-    // Validate prediction object
-    const predictionFields = [
-      'direction',
-      'probability',
-      'price_target_low',
-      'price_target_high',
-      'current_price',
-    ];
-    for (const field of predictionFields) {
-      if (!(field in parsed.prediction)) {
-        throw new Error(`Missing prediction field: ${field}`);
-      }
-    }
-
-    // Validate metrics object
-    const metricsFields = ['rsi', 'macd', 'pe_ratio', 'volume_trend'];
-    for (const field of metricsFields) {
-      if (!(field in parsed.metrics)) {
-        throw new Error(`Missing metrics field: ${field}`);
-      }
-    }
-
-    // Validate enum values
-    const validDirections = ['bullish', 'bearish', 'neutral'];
-    if (!validDirections.includes(parsed.prediction.direction)) {
-      throw new Error(`Invalid prediction direction: ${parsed.prediction.direction}`);
-    }
-
-    const validRiskLevels = ['low', 'medium', 'high'];
-    if (!validRiskLevels.includes(parsed.risk_level)) {
-      throw new Error(`Invalid risk level: ${parsed.risk_level}`);
-    }
-
-    const validConfidenceLevels = ['low', 'medium', 'high'];
-    if (!validConfidenceLevels.includes(parsed.confidence)) {
-      throw new Error(`Invalid confidence level: ${parsed.confidence}`);
-    }
-
-    // Validate numeric ranges
-    if (parsed.prediction.probability < 0 || parsed.prediction.probability > 100) {
-      throw new Error('Probability must be between 0 and 100');
-    }
-
-    if (parsed.metrics.rsi < 0 || parsed.metrics.rsi > 100) {
-      throw new Error('RSI must be between 0 and 100');
-    }
-
-    return parsed as IClaudeAnalysisResponse;
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error(`Failed to parse AI response as JSON: ${error.message}`);
-    }
-    throw error;
-  }
+  return {
+    prediction: {
+      direction,
+      probability: 45 + Math.floor(Math.random() * 30),
+      price_target_low: Math.round(basePrice * 0.9 * 100) / 100,
+      price_target_high: Math.round(basePrice * 1.15 * 100) / 100,
+      current_price: Math.round(basePrice * 100) / 100,
+    },
+    metrics: {
+      rsi: 30 + Math.floor(Math.random() * 40),
+      macd: direction === 'bullish' ? 'positive' : direction === 'bearish' ? 'negative' : 'neutral',
+      pe_ratio: Math.round((10 + Math.random() * 30) * 10) / 10,
+      volume_trend: ['increasing', 'decreasing', 'stable'][Math.floor(Math.random() * 3)],
+    },
+    risk_level: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high',
+    confidence: 'low',
+    summary: `${ticker} in ${sector || 'unknown'} sector. This is demo data - connect Anthropic API for real AI analysis.`,
+    key_factors: ['Demo mode', 'Simulated metrics', 'API not connected'],
+  };
 }
 
 /**
@@ -193,13 +160,24 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Analyzes a stock using Claude AI
+ * Analyzes a stock using Claude AI (or mock data in demo mode)
  */
 export async function analyzeStock(
   ticker: string,
   market: Market,
   timeframe: Timeframe
 ): Promise<IStockAnalysis> {
+  // Return mock data in demo mode
+  if (env.DEMO_MODE) {
+    // Simulate API delay for realistic feel
+    await sleep(500 + Math.random() * 1000);
+    return generateMockAnalysis(ticker, market, timeframe);
+  }
+
+  // Real API call
+  const Anthropic = (await import('@anthropic-ai/sdk')).default;
+  const anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+
   const today = new Date().toISOString().split('T')[0];
   const prompt = generateAnalysisPrompt(ticker, market, timeframe, today);
 
@@ -208,17 +186,11 @@ export async function analyzeStock(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const message = await anthropicClient.messages.create({
-        model: claudeConfig.model,
-        max_tokens: claudeConfig.maxTokens,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
+        model: env.ANTHROPIC_MODEL,
+        max_tokens: env.ANTHROPIC_MAX_TOKENS,
+        messages: [{ role: 'user', content: prompt }],
       });
 
-      // Extract text content from the response
       const textContent = message.content.find((block) => block.type === 'text');
       if (!textContent || textContent.type !== 'text') {
         throw new Error('No text content in AI response');
@@ -226,10 +198,7 @@ export async function analyzeStock(
 
       const parsed = parseAIResponse(textContent.text);
 
-      // Enhance with stock info if available
-      const stockInfo = getStockInfo(market, ticker);
-
-      const analysis: IStockAnalysis = {
+      return {
         ticker: parsed.ticker,
         market: parsed.market,
         timeframe: parsed.timeframe,
@@ -241,28 +210,10 @@ export async function analyzeStock(
         key_factors: parsed.key_factors,
         confidence: parsed.confidence,
       };
-
-      return analysis;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      console.error(`[ClaudeAI] Attempt ${attempt}/${MAX_RETRIES} failed:`, lastError.message);
 
-      // Log error without exposing sensitive data
-      console.error(
-        `[ClaudeAI] Attempt ${attempt}/${MAX_RETRIES} failed for ${ticker}:`,
-        lastError.message
-      );
-
-      // Don't retry on validation errors
-      if (
-        lastError.message.includes('Missing required field') ||
-        lastError.message.includes('Invalid prediction') ||
-        lastError.message.includes('Invalid risk level') ||
-        lastError.message.includes('Invalid confidence')
-      ) {
-        throw lastError;
-      }
-
-      // Wait before retrying (exponential backoff)
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY_MS * attempt);
       }
@@ -273,11 +224,55 @@ export async function analyzeStock(
 }
 
 /**
- * Test the AI service with a sample stock
+ * Generates the analysis prompt for Claude
+ */
+function generateAnalysisPrompt(ticker: string, market: Market, timeframe: Timeframe, today: string): string {
+  return `You are a financial analyst. Analyze the following stock for a ${timeframe} outlook.
+
+### Stock Details:
+- **Market:** ${market}
+- **Ticker:** ${ticker}
+- **Timeframe:** ${timeframe}
+- **Analysis Date:** ${today}
+
+### Response Format (JSON ONLY):
+\`\`\`json
+{
+  "ticker": "${ticker}",
+  "market": "${market}",
+  "timeframe": "${timeframe}",
+  "analysis_date": "${today}",
+  "prediction": { "direction": "bullish|bearish|neutral", "probability": 0-100, "price_target_low": 0, "price_target_high": 0, "current_price": 0 },
+  "metrics": { "rsi": 0-100, "macd": "positive|negative|neutral", "pe_ratio": 0, "volume_trend": "increasing|decreasing|stable" },
+  "risk_level": "low|medium|high",
+  "summary": "2-3 sentence summary",
+  "key_factors": ["factor1", "factor2", "factor3"],
+  "confidence": "low|medium|high"
+}
+\`\`\`
+
+Return ONLY valid JSON.`;
+}
+
+/**
+ * Parses and validates the AI response
+ */
+function parseAIResponse(responseText: string): IClaudeAnalysisResponse {
+  let jsonStr = responseText.trim();
+  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (jsonMatch) jsonStr = jsonMatch[1].trim();
+
+  const parsed = JSON.parse(jsonStr);
+  return parsed as IClaudeAnalysisResponse;
+}
+
+/**
+ * Test the AI service
  */
 export async function testAIService(): Promise<{
   success: boolean;
   responseTime: number;
+  demoMode: boolean;
   analysis?: IStockAnalysis;
   error?: string;
 }> {
@@ -285,24 +280,20 @@ export async function testAIService(): Promise<{
 
   try {
     const analysis = await analyzeStock('AAPL', 'US', '3M');
-    const responseTime = Date.now() - startTime;
-
     return {
       success: true,
-      responseTime,
+      responseTime: Date.now() - startTime,
+      demoMode: env.DEMO_MODE,
       analysis,
     };
   } catch (error) {
-    const responseTime = Date.now() - startTime;
     return {
       success: false,
-      responseTime,
+      responseTime: Date.now() - startTime,
+      demoMode: env.DEMO_MODE,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
-export default {
-  analyzeStock,
-  testAIService,
-};
+export default { analyzeStock, testAIService };

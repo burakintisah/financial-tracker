@@ -64,7 +64,7 @@ export async function getAnalysis(req: Request, res: Response): Promise<void> {
     }
 
     // Get or create analysis
-    const { analysis, cached } = await getOrCreateAnalysis(
+    const { analysis, cached, demoMode } = await getOrCreateAnalysis(
       market as Market,
       ticker,
       timeframe as Timeframe
@@ -74,6 +74,7 @@ export async function getAnalysis(req: Request, res: Response): Promise<void> {
       success: true,
       data: analysis,
       cached,
+      demoMode,
     });
   } catch (error) {
     console.error('[AnalysisController] Error getting analysis:', error);
@@ -204,6 +205,7 @@ export async function testAnalysis(req: Request, res: Response): Promise<void> {
       success: result.success,
       responseTime: result.responseTime,
       cached: false,
+      demoMode: result.demoMode,
       analysis: result.analysis,
       error: result.error,
     });
