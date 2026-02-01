@@ -134,6 +134,7 @@ function App() {
       <footer className="py-6 px-4 border-t border-white/10">
         <div className="max-w-4xl mx-auto text-center text-blue-200 text-sm">
           <p>Financial Tracker &copy; {new Date().getFullYear()}</p>
+          <p className="mt-1">by Burak Intisah</p>
         </div>
       </footer>
     </div>
