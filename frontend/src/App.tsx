@@ -1,5 +1,7 @@
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { AnalysisDashboard } from './pages/AnalysisDashboard';
 
 interface HealthStatus {
   status: string;
@@ -11,6 +13,7 @@ interface FeatureCard {
   icon: string;
   title: string;
   description: string;
+  link?: string;
 }
 
 const features: FeatureCard[] = [
@@ -20,18 +23,59 @@ const features: FeatureCard[] = [
     description: 'Monitor all your bank accounts, investments, and crypto in one place.',
   },
   {
+    icon: '🤖',
+    title: 'AI Stock Analysis',
+    description: 'Get AI-powered insights on stocks from BIST and US markets.',
+    link: '/analysis',
+  },
+  {
     icon: '📈',
     title: 'Visualize Trends',
     description: 'See how your wealth grows over time with beautiful charts.',
   },
-  {
-    icon: '📱',
-    title: 'Access Anywhere',
-    description: 'Check your finances from any device, anytime.',
-  },
 ];
 
-function App() {
+function Navigation() {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+
+  return (
+    <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link to="/" className="flex items-center gap-2 text-white font-bold text-xl">
+            <span>💰</span>
+            <span>Financial Tracker</span>
+          </Link>
+          <div className="flex gap-4">
+            <Link
+              to="/"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isHome
+                  ? 'bg-white/20 text-white'
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              to="/analysis"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                !isHome
+                  ? 'bg-white/20 text-white'
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Stock Analysis
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function HomePage() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +99,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800">
+    <>
       {/* Header */}
       <header className="pt-12 pb-8 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -101,7 +145,18 @@ function App() {
               >
                 <div className="text-4xl mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-blue-100">{feature.description}</p>
+                <p className="text-blue-100 mb-4">{feature.description}</p>
+                {feature.link && (
+                  <Link
+                    to={feature.link}
+                    className="inline-flex items-center gap-1 text-yellow-300 hover:text-yellow-100 font-medium"
+                  >
+                    Try Now
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -129,15 +184,51 @@ function App() {
           </div>
         </div>
       </main>
+    </>
+  );
+}
+
+function AppContent() {
+  const location = useLocation();
+  const isAnalysisPage = location.pathname === '/analysis';
+
+  return (
+    <div className={`min-h-screen ${isAnalysisPage ? 'bg-gray-50' : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800'}`}>
+      {!isAnalysisPage && <Navigation />}
+
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/analysis" element={<AnalysisDashboard />} />
+      </Routes>
 
       {/* Footer */}
-      <footer className="py-6 px-4 border-t border-white/10">
-        <div className="max-w-4xl mx-auto text-center text-blue-200 text-sm">
-          <p>Financial Tracker &copy; {new Date().getFullYear()}</p>
-          <p className="mt-1">by Burak Intisah</p>
+      <footer className={`py-6 px-4 ${isAnalysisPage ? 'bg-gray-100 border-t border-gray-200' : 'border-t border-white/10'}`}>
+        <div className="max-w-4xl mx-auto text-center text-sm">
+          <p className={isAnalysisPage ? 'text-gray-600' : 'text-blue-200'}>
+            Financial Tracker &copy; {new Date().getFullYear()}
+          </p>
+          <p className={`mt-1 ${isAnalysisPage ? 'text-gray-500' : 'text-blue-200'}`}>
+            by Burak Intisah
+          </p>
+          {isAnalysisPage && (
+            <Link
+              to="/"
+              className="mt-2 inline-block text-blue-600 hover:text-blue-800"
+            >
+              Back to Home
+            </Link>
+          )}
         </div>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 
