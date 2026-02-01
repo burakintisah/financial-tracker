@@ -175,6 +175,6 @@ Vercel'de: **Deployments** > **Redeploy** > "Clear Build Cache"
 
 2. **Commit mesajlari**: Turkce veya Ingilizce olabilir, tutarli ol.
 
-3. **Branch isimlendirme**: Mevcut branch uzerinde calis veya `claude/` prefix'i ile yeni branch olustur.
+3. **Branch isimlendirme**: `FINT-XXXX-<kisa-aciklama>` formatini kullan. XXXX her task'ta 1 artar (0001, 0002, ...).
 
 4. **Test**: Degisikliklerden sonra `npm run build` ile build'in calistigini dogrula.

@@ -8,10 +8,10 @@ Bu döküman, projede kullanılan kuralları ve deployment süreçlerini içerir
 
 ### Branch Naming Convention
 ```
-FIN-XXXX-<kısa-açıklama>
+FINT-XXXX-<kısa-açıklama>
 ```
-- `XXXX`: 0001'den başlayan artan numara
-- Örnek: `FIN-0001-initial-setup`, `FIN-0002-add-auth`
+- `XXXX`: 0001'den başlayan artan numara (her task'ta 1 artar)
+- Örnek: `FINT-0001-initial-setup`, `FINT-0002-add-auth`
 
 ### Commit Convention
 ```
@@ -260,7 +260,7 @@ npm run build:be
 
 ## Checklist: Yeni Özellik Ekleme
 
-- [ ] Branch oluştur: `FIN-XXXX-<description>`
+- [ ] Branch oluştur: `FINT-XXXX-<description>`
 - [ ] Değişiklikleri yap
 - [ ] Lokal test et
 - [ ] Commit at: `feat: <description>`
