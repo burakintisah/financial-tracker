@@ -39,7 +39,8 @@ function App() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const response = await axios.get<HealthStatus>('/api/health');
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await axios.get<HealthStatus>(`${apiUrl}/api/health`);
         setHealth(response.data);
         setError(null);
       } catch (err) {
