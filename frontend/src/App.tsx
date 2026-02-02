@@ -1,11 +1,16 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { AnalysisDashboard } from './pages/AnalysisDashboard';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { SnapshotsPage } from './pages/SnapshotsPage';
+import { SnapshotDetailPage } from './pages/SnapshotDetailPage';
+import { CreateSnapshotPage } from './pages/CreateSnapshotPage';
 import { ThemeProvider, useTheme, themeClasses, getThemeClass } from './contexts/ThemeContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 interface HealthStatus {
   status: string;
@@ -25,6 +30,7 @@ const features: FeatureCard[] = [
     icon: '📊',
     title: 'Track Everything',
     description: 'Monitor all your bank accounts, investments, and crypto in one place.',
+    link: '/dashboard',
   },
   {
     icon: '🤖',
@@ -36,6 +42,7 @@ const features: FeatureCard[] = [
     icon: '📈',
     title: 'Visualize Trends',
     description: 'See how your wealth grows over time with beautiful charts.',
+    link: '/dashboard',
   },
 ];
 
@@ -70,7 +77,6 @@ function ThemeToggle() {
 function Navigation() {
   const location = useLocation();
   const { isDark } = useTheme();
-  const { isAuthenticated, user, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -97,18 +103,16 @@ function Navigation() {
               Home
             </Link>
 
-            {isAuthenticated && (
-              <Link
-                to="/dashboard"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/dashboard')
-                    ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
-                    : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
-                }`}
-              >
-                Dashboard
-              </Link>
-            )}
+            <Link
+              to="/dashboard"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isActive('/dashboard')
+                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
+              }`}
+            >
+              Dashboard
+            </Link>
 
             <Link
               to="/analysis"
@@ -127,31 +131,13 @@ function Navigation() {
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Auth Button */}
-            {isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <span className={`text-sm ${isDark ? 'text-navy-300' : 'text-slate-600'}`}>
-                  {user?.name}
-                </span>
-                <button
-                  onClick={logout}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isDark
-                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                      : 'bg-red-50 text-red-600 hover:bg-red-100'
-                  }`}
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
-              >
-                Login
-              </Link>
-            )}
+            {/* Login Button */}
+            <Link
+              to="/login"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
+            >
+              Login
+            </Link>
           </div>
         </div>
       </div>
@@ -165,7 +151,6 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isDark } = useTheme();
-  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -199,21 +184,12 @@ function HomePage() {
 
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            {isAuthenticated ? (
-              <Link
-                to="/dashboard"
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
-              >
-                Go to Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
-              >
-                Get Started
-              </Link>
-            )}
+            <Link
+              to="/login"
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
+            >
+              Get Started
+            </Link>
             <Link
               to="/analysis"
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${getThemeClass(themeClasses.button.secondary, isDark)}`}
@@ -275,32 +251,27 @@ function HomePage() {
             ))}
           </div>
 
-          {/* Coming Soon Section */}
+          {/* Get Started Section */}
           <div className={`rounded-xl p-8 border text-center ${
             isDark
               ? 'bg-gradient-to-r from-navy-800 to-navy-700 border-gold-500/30'
               : 'bg-gradient-to-r from-slate-100 to-slate-50 border-slate-200'
           }`}>
             <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-800'}`}>
-              <span className="text-gold-500">🚀</span> Coming Soon
+              <span className="text-gold-400">🚀</span> Get Started
             </h2>
-            <p className={`mb-4 ${isDark ? 'text-navy-200' : 'text-slate-600'}`}>
-              We're building something amazing! Soon you'll be able to:
+            <p className={`mb-6 ${isDark ? 'text-navy-200' : 'text-slate-600'}`}>
+              Sign in with Google to start tracking your finances and investments.
             </p>
-            <ul className={`text-left inline-block space-y-2 ${isDark ? 'text-navy-200' : 'text-slate-600'}`}>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500">✓</span> Import data from Excel files
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500">✓</span> View interactive charts and reports
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500">✓</span> Track multiple currencies
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500">✓</span> Compare snapshots over time
-              </li>
-            </ul>
+            <Link
+              to="/login"
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
+            >
+              <span>Sign In with Google</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       </main>
@@ -308,33 +279,27 @@ function HomePage() {
   );
 }
 
-// Protected Route Component
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-}
-
 // App Content Component
 function AppContent() {
   const location = useLocation();
   const { isDark } = useTheme();
 
-  // Pages without navigation (like login)
-  const noNavPages = ['/login'];
-  const showNav = !noNavPages.includes(location.pathname);
+  const isProtectedPage = ['/dashboard', '/snapshots', '/snapshots/new'].includes(location.pathname) ||
+    location.pathname.startsWith('/snapshots/');
+  const isLoginPage = location.pathname === '/login';
+  const showNavigation = !isProtectedPage && !isLoginPage;
 
   return (
-    <div className={`min-h-screen ${getThemeClass(themeClasses.pageBg, isDark)}`}>
-      {showNav && <Navigation />}
+    <div className={`min-h-screen ${isProtectedPage ? (isDark ? 'bg-navy-900' : 'bg-slate-50') : getThemeClass(themeClasses.pageBg, isDark)}`}>
+      {showNavigation && <Navigation />}
 
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/analysis" element={<AnalysisDashboard />} />
+
+        {/* Protected routes */}
         <Route
           path="/dashboard"
           element={
@@ -343,11 +308,34 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-        <Route path="/analysis" element={<AnalysisDashboard />} />
+        <Route
+          path="/snapshots"
+          element={
+            <ProtectedRoute>
+              <SnapshotsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots/new"
+          element={
+            <ProtectedRoute>
+              <CreateSnapshotPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots/:id"
+          element={
+            <ProtectedRoute>
+              <SnapshotDetailPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
       {/* Footer */}
-      {showNav && (
+      {showNavigation && (
         <footer className={`py-6 px-4 ${getThemeClass(themeClasses.footer, isDark)}`}>
           <div className="max-w-4xl mx-auto text-center text-sm">
             <p className={isDark ? 'text-navy-400' : 'text-slate-600'}>
@@ -370,6 +358,16 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppContent />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#333',
+                color: '#fff',
+              },
+            }}
+          />
         </AuthProvider>
       </ThemeProvider>
     </Router>

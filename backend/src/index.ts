@@ -8,6 +8,10 @@ dotenv.config();
 
 import { env } from './config/env';
 import analysisRoutes from './routes/analysis.routes';
+import authRoutes from './routes/auth.routes';
+import snapshotRoutes from './routes/snapshot.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import importRoutes from './routes/import.routes';
 
 const app = express();
 
@@ -45,6 +49,18 @@ app.get('/api/health', (_req: Request, res: Response) => {
 
 // Analysis routes
 app.use('/api', analysisRoutes);
+
+// Auth routes
+app.use('/api', authRoutes);
+
+// Snapshot routes
+app.use('/api', snapshotRoutes);
+
+// Dashboard routes
+app.use('/api', dashboardRoutes);
+
+// Import routes
+app.use('/api', importRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

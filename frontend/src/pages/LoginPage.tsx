@@ -1,151 +1,105 @@
 /**
  * Login Page
- * Authentication page with consistent theme support
+ * Google OAuth login
  */
 
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme, themeClasses, getThemeClass } from '../contexts/ThemeContext';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
-export function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-  const { login } = useAuth();
-  const { isDark } = useTheme();
+const LoginContent: React.FC = () => {
+  const { isAuthenticated, isLoading, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/dashboard');
-      } else {
-        setError('Invalid email or password');
+      if (credentialResponse.credential) {
+        await login(credentialResponse.credential);
+        toast.success('Welcome back!');
+        navigate(from, { replace: true });
       }
-    } catch {
-      setError('An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Login failed. Please try again.');
     }
   };
 
-  return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${getThemeClass(themeClasses.pageBg, isDark)}`}>
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <span className="text-4xl">📊</span>
-            <span className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-800'}`}>
-              Financial Tracker
-            </span>
-          </Link>
-          <p className={`mt-2 ${isDark ? 'text-navy-300' : 'text-slate-600'}`}>
-            Sign in to your account
-          </p>
-        </div>
+  const handleGoogleError = () => {
+    toast.error('Google login failed. Please try again.');
+  };
 
-        {/* Login Card */}
-        <div className={`rounded-xl p-8 border ${getThemeClass(themeClasses.card, isDark)}`}>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mx-auto mb-4" />
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800">
+      <div className="max-w-md w-full mx-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center">
+          <div className="text-6xl mb-4">💰</div>
+          <h1 className="text-3xl font-bold text-white mb-2">Financial Tracker</h1>
+          <p className="text-blue-100 mb-8">
+            Track your finances, investments, and watch your wealth grow.
+          </p>
+
+          <div className="flex justify-center">
+            {GOOGLE_CLIENT_ID ? (
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                theme="filled_blue"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+              />
+            ) : (
+              <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-4 text-yellow-100 text-sm">
+                <p className="font-semibold mb-1">Google OAuth not configured</p>
+                <p>Set VITE_GOOGLE_CLIENT_ID in your .env file</p>
               </div>
             )}
-
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className={`block text-sm font-medium mb-2 ${isDark ? 'text-navy-200' : 'text-slate-700'}`}
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className={`w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 ${getThemeClass(themeClasses.input, isDark)}`}
-                placeholder="you@example.com"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className={`block text-sm font-medium mb-2 ${isDark ? 'text-navy-200' : 'text-slate-700'}`}
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className={`w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 ${getThemeClass(themeClasses.input, isDark)}`}
-                placeholder="••••••••"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${getThemeClass(themeClasses.button.primary, isDark)}`}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Signing in...
-                </span>
-              ) : (
-                'Sign In'
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center">
-            <div className={`flex-1 border-t ${isDark ? 'border-navy-600' : 'border-slate-200'}`} />
-            <span className={`px-4 text-sm ${isDark ? 'text-navy-400' : 'text-slate-500'}`}>or</span>
-            <div className={`flex-1 border-t ${isDark ? 'border-navy-600' : 'border-slate-200'}`} />
           </div>
 
-          {/* Continue without login */}
-          <Link
-            to="/analysis"
-            className={`block w-full py-3 px-4 rounded-lg font-medium text-center transition-colors ${getThemeClass(themeClasses.button.secondary, isDark)}`}
-          >
-            Continue as Guest
-          </Link>
+          <p className="text-blue-200 text-sm mt-6">
+            By signing in, you agree to our Terms of Service and Privacy Policy.
+          </p>
         </div>
-
-        {/* Back to Home */}
-        <p className={`mt-6 text-center text-sm ${isDark ? 'text-navy-400' : 'text-slate-500'}`}>
-          <Link to="/" className={`${isDark ? 'text-gold-400 hover:text-gold-300' : 'text-navy-600 hover:text-navy-800'}`}>
-            ← Back to Home
-          </Link>
-        </p>
       </div>
     </div>
   );
-}
+};
+
+export const LoginPage: React.FC = () => {
+  if (!GOOGLE_CLIENT_ID) {
+    return <LoginContent />;
+  }
+
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <LoginContent />
+    </GoogleOAuthProvider>
+  );
+};
 
 export default LoginPage;
