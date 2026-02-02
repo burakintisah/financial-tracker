@@ -1,6 +1,6 @@
 {
   "name": "financial-tracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Personal finance tracking application with Excel import support",
   "private": true,
   "workspaces": [
