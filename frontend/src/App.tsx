@@ -2,8 +2,9 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { BurgerMenu } from './components/BurgerMenu';
 import { AnalysisDashboard } from './pages/AnalysisDashboard';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -73,71 +74,122 @@ function ThemeToggle() {
   );
 }
 
-// Navigation Component
-function Navigation() {
+// Top Bar Component - Always visible on all pages
+function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const location = useLocation();
   const { isDark } = useTheme();
+  const { isAuthenticated } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Check if we're on a page that needs compact navigation (login page)
+  const isLoginPage = location.pathname === '/login';
 
   return (
     <nav className={getThemeClass(themeClasses.nav, isDark)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className={`flex items-center gap-2 font-bold text-xl ${isDark ? 'text-white' : 'text-navy-800'}`}>
-            <span className="text-gold-400">📊</span>
-            <span>Financial Tracker</span>
-          </Link>
+          {/* Left side: Burger Menu + Logo */}
+          <div className="flex items-center gap-3">
+            {/* Burger Menu Button */}
+            <button
+              onClick={onMenuClick}
+              className={`p-2 rounded-lg transition-colors ${
+                isDark
+                  ? 'hover:bg-navy-700 text-navy-200'
+                  : 'hover:bg-slate-100 text-slate-600'
+              }`}
+              aria-label="Open menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
 
-          {/* Navigation Links */}
+            {/* Logo */}
+            <Link to="/" className={`flex items-center gap-2 font-bold text-xl ${isDark ? 'text-white' : 'text-navy-800'}`}>
+              <span className="text-gold-400">📊</span>
+              <span className="hidden sm:inline">Financial Tracker</span>
+            </Link>
+          </div>
+
+          {/* Right side: Desktop Navigation + Theme Toggle + Login/User */}
           <div className="flex items-center gap-2">
-            <Link
-              to="/"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive('/')
-                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
-                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
-              }`}
-            >
-              Home
-            </Link>
+            {/* Desktop Navigation Links - hidden on mobile */}
+            {!isLoginPage && (
+              <div className="hidden md:flex items-center gap-1">
+                <Link
+                  to="/"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive('/')
+                      ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                      : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
+                  }`}
+                >
+                  Home
+                </Link>
 
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive('/dashboard')
-                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
-                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
-              }`}
-            >
-              Dashboard
-            </Link>
+                <Link
+                  to="/dashboard"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive('/dashboard')
+                      ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                      : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
+                  }`}
+                >
+                  Dashboard
+                </Link>
 
-            <Link
-              to="/analysis"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive('/analysis')
-                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
-                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
-              }`}
-            >
-              Stock Analysis
-            </Link>
+                <Link
+                  to="/analysis"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive('/analysis')
+                      ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                      : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
+                  }`}
+                >
+                  Stock Analysis
+                </Link>
 
-            {/* Divider */}
-            <div className={`w-px h-6 mx-2 ${isDark ? 'bg-navy-700' : 'bg-slate-200'}`} />
+                {isAuthenticated && (
+                  <Link
+                    to="/snapshots"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActive('/snapshots') || location.pathname.startsWith('/snapshots/')
+                        ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                        : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
+                    }`}
+                  >
+                    Snapshots
+                  </Link>
+                )}
+
+                {/* Divider */}
+                <div className={`w-px h-6 mx-2 ${isDark ? 'bg-navy-700' : 'bg-slate-200'}`} />
+              </div>
+            )}
 
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Login Button */}
-            <Link
-              to="/login"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
-            >
-              Login
-            </Link>
+            {/* Login/User Button */}
+            {!isAuthenticated ? (
+              <Link
+                to="/login"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
+              >
+                Login
+              </Link>
+            ) : (
+              <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                isDark ? 'bg-navy-700' : 'bg-slate-100'
+              }`}>
+                <div className={`w-2 h-2 rounded-full bg-emerald-400`} />
+                <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-navy-800'}`}>
+                  Logged In
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -283,16 +335,22 @@ function HomePage() {
 function AppContent() {
   const location = useLocation();
   const { isDark } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const isProtectedPage = ['/dashboard', '/snapshots', '/snapshots/new'].includes(location.pathname) ||
-    location.pathname.startsWith('/snapshots/');
-  const isLoginPage = location.pathname === '/login';
-  const showNavigation = !isProtectedPage && !isLoginPage;
+  const isHomePage = location.pathname === '/';
+
+  // Show footer only on home page
+  const showFooter = isHomePage;
 
   return (
-    <div className={`min-h-screen ${isProtectedPage ? (isDark ? 'bg-navy-900' : 'bg-slate-50') : getThemeClass(themeClasses.pageBg, isDark)}`}>
-      {showNavigation && <Navigation />}
+    <div className={`min-h-screen ${getThemeClass(themeClasses.pageBg, isDark)}`}>
+      {/* Top Bar - Always visible */}
+      <TopBar onMenuClick={() => setIsMenuOpen(true)} />
 
+      {/* Burger Menu */}
+      <BurgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+
+      {/* Main Content */}
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
@@ -335,7 +393,7 @@ function AppContent() {
       </Routes>
 
       {/* Footer */}
-      {showNavigation && (
+      {showFooter && (
         <footer className={`py-6 px-4 ${getThemeClass(themeClasses.footer, isDark)}`}>
           <div className="max-w-4xl mx-auto text-center text-sm">
             <p className={isDark ? 'text-navy-400' : 'text-slate-600'}>
