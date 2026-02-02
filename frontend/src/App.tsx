@@ -1,7 +1,15 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { AnalysisDashboard } from './pages/AnalysisDashboard';
+import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { SnapshotsPage } from './pages/SnapshotsPage';
+import { SnapshotDetailPage } from './pages/SnapshotDetailPage';
+import { CreateSnapshotPage } from './pages/CreateSnapshotPage';
 
 interface HealthStatus {
   status: string;
@@ -21,6 +29,7 @@ const features: FeatureCard[] = [
     icon: '📊',
     title: 'Track Everything',
     description: 'Monitor all your bank accounts, investments, and crypto in one place.',
+    link: '/dashboard',
   },
   {
     icon: '🤖',
@@ -32,6 +41,7 @@ const features: FeatureCard[] = [
     icon: '📈',
     title: 'Visualize Trends',
     description: 'See how your wealth grows over time with beautiful charts.',
+    link: '/dashboard',
   },
 ];
 
@@ -59,14 +69,30 @@ function Navigation() {
               Home
             </Link>
             <Link
+              to="/dashboard"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                location.pathname === '/dashboard'
+                  ? 'bg-navy-700 text-white shadow-sm'
+                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
+              }`}
+            >
+              Dashboard
+            </Link>
+            <Link
               to="/analysis"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                !isHome
+                location.pathname === '/analysis'
                   ? 'bg-navy-700 text-white shadow-sm'
                   : 'text-navy-200 hover:text-white hover:bg-navy-800'
               }`}
             >
               Stock Analysis
+            </Link>
+            <Link
+              to="/login"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-gold-500 text-navy-900 hover:bg-gold-400 transition-all duration-200"
+            >
+              Login
             </Link>
           </div>
         </div>
@@ -161,28 +187,23 @@ function HomePage() {
             ))}
           </div>
 
-          {/* Coming Soon Section */}
+          {/* Get Started Section */}
           <div className="bg-gradient-to-r from-navy-800 to-navy-700 backdrop-blur-lg rounded-xl p-8 border border-gold-500/30 text-center">
             <h2 className="text-2xl font-bold text-white mb-3">
-              <span className="text-gold-400">🚀</span> Coming Soon
+              <span className="text-gold-400">🚀</span> Get Started
             </h2>
-            <p className="text-navy-200 mb-4">
-              We're building something amazing! Soon you'll be able to:
+            <p className="text-navy-200 mb-6">
+              Sign in with Google to start tracking your finances and investments.
             </p>
-            <ul className="text-left inline-block text-navy-200 space-y-2">
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span> Import data from Excel files
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span> View interactive charts and reports
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span> Track multiple currencies
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span> Compare snapshots over time
-              </li>
-            </ul>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 text-navy-900 font-semibold rounded-lg hover:bg-gold-400 transition-colors"
+            >
+              <span>Sign In with Google</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       </main>
@@ -193,27 +214,69 @@ function HomePage() {
 function AppContent() {
   const location = useLocation();
   const isAnalysisPage = location.pathname === '/analysis';
+  const isProtectedPage = ['/dashboard', '/snapshots', '/snapshots/new'].includes(location.pathname) ||
+    location.pathname.startsWith('/snapshots/');
+  const isLoginPage = location.pathname === '/login';
+  const showNavigation = !isAnalysisPage && !isProtectedPage && !isLoginPage;
 
   return (
-    <div className={`min-h-screen ${isAnalysisPage ? 'bg-slate-50' : 'bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800'}`}>
-      <Navigation />
+    <div className={`min-h-screen ${isAnalysisPage || isProtectedPage ? 'bg-slate-50' : 'bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800'}`}>
+      {showNavigation && <Navigation />}
 
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/analysis" element={<AnalysisDashboard />} />
+
+        {/* Protected routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots"
+          element={
+            <ProtectedRoute>
+              <SnapshotsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots/new"
+          element={
+            <ProtectedRoute>
+              <CreateSnapshotPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/snapshots/:id"
+          element={
+            <ProtectedRoute>
+              <SnapshotDetailPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
       {/* Footer */}
-      <footer className={`py-6 px-4 ${isAnalysisPage ? 'bg-slate-100 border-t border-slate-200' : 'bg-navy-950 border-t border-navy-800'}`}>
-        <div className="max-w-4xl mx-auto text-center text-sm">
-          <p className={isAnalysisPage ? 'text-slate-600' : 'text-navy-400'}>
-            Financial Tracker &copy; {new Date().getFullYear()}
-          </p>
-          <p className={`mt-1 ${isAnalysisPage ? 'text-slate-500' : 'text-navy-500'}`}>
-            by Burak Intisah
-          </p>
-        </div>
-      </footer>
+      {showNavigation && (
+        <footer className="py-6 px-4 bg-navy-950 border-t border-navy-800">
+          <div className="max-w-4xl mx-auto text-center text-sm">
+            <p className="text-navy-400">
+              Financial Tracker &copy; {new Date().getFullYear()}
+            </p>
+            <p className="mt-1 text-navy-500">
+              by Burak Intisah
+            </p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
@@ -221,7 +284,19 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
+      </AuthProvider>
     </Router>
   );
 }

@@ -17,6 +17,10 @@ interface EnvConfig {
   // Demo Mode
   DEMO_MODE: boolean;
 
+  // Auth
+  JWT_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+
   // Database (optional in demo mode)
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
@@ -88,6 +92,10 @@ function getEnvConfig(): EnvConfig {
 
     // Demo Mode
     DEMO_MODE: demoMode,
+
+    // Auth
+    JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
 
     // Database (empty strings if not set)
     SUPABASE_URL: process.env.SUPABASE_URL || '',
