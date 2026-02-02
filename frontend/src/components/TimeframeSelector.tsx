@@ -25,8 +25,8 @@ export function TimeframeSelector({ selected, onChange }: TimeframeSelectorProps
           onClick={() => onChange(value)}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             selected === value
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-navy-800 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
           {label}
