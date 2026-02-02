@@ -9,9 +9,11 @@ import { useAnalysis } from '../hooks/useAnalysis';
 import { MarketTabs } from '../components/MarketTabs';
 import { StockAnalysisCard } from '../components/StockAnalysisCard';
 import { AnalysisModal } from '../components/AnalysisModal';
+import { useTheme, themeClasses, getThemeClass } from '../contexts/ThemeContext';
 
 export function AnalysisDashboard() {
   const [market, setMarket] = useState<Market>('US');
+  const { isDark } = useTheme();
 
   const {
     stocks,
@@ -41,11 +43,11 @@ export function AnalysisDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div>
       {/* Hero Section */}
-      <div className="bg-navy-900 text-white">
+      <div className={isDark ? 'bg-navy-800' : 'bg-navy-900 text-white'}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">
             AI-Powered Stock Analysis
           </h1>
           <p className="text-navy-300 text-lg max-w-2xl">
@@ -66,8 +68,8 @@ export function AnalysisDashboard() {
               disabled={isGeneratingAll || pendingCount === 0 || isLoadingStocks}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 isGeneratingAll || pendingCount === 0 || isLoadingStocks
-                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                  : 'bg-navy-800 text-white hover:bg-navy-700'
+                  ? isDark ? 'bg-navy-700 text-navy-400 cursor-not-allowed' : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  : getThemeClass(themeClasses.button.primary, isDark)
               }`}
             >
               {isGeneratingAll ? (
@@ -88,13 +90,17 @@ export function AnalysisDashboard() {
 
           {/* Status & Refresh */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-500">
+            <span className={`text-sm ${isDark ? 'text-navy-400' : 'text-slate-500'}`}>
               {analysisCount} / {stocks.length} analyzed today
             </span>
             <button
               onClick={refetch}
               disabled={isGeneratingAll}
-              className="px-4 py-2 text-sm text-navy-600 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors disabled:opacity-50"
+              className={`px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
+                isDark
+                  ? 'text-gold-400 hover:text-gold-300 hover:bg-navy-700'
+                  : 'text-navy-600 hover:text-navy-800 hover:bg-navy-50'
+              }`}
             >
               Refresh
             </button>
@@ -154,20 +160,24 @@ export function AnalysisDashboard() {
         {/* Empty State */}
         {!isLoadingStocks && stocks.length === 0 && !error && (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-16 h-16 mx-auto mb-4 ${isDark ? 'text-navy-600' : 'text-slate-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
-            <h3 className="text-lg font-medium text-slate-700 mb-2">No stocks available</h3>
-            <p className="text-slate-500">Check back later for stock analysis</p>
+            <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-navy-200' : 'text-slate-700'}`}>No stocks available</h3>
+            <p className={isDark ? 'text-navy-400' : 'text-slate-500'}>Check back later for stock analysis</p>
           </div>
         )}
 
         {/* Info Banner */}
-        <div className="mt-12 bg-navy-50 border border-navy-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-navy-800 mb-2">
+        <div className={`mt-12 rounded-lg p-6 border ${
+          isDark
+            ? 'bg-navy-800 border-navy-700'
+            : 'bg-navy-50 border-navy-200'
+        }`}>
+          <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-navy-800'}`}>
             About AI Stock Analysis
           </h3>
-          <p className="text-navy-600 text-sm leading-relaxed">
+          <p className={`text-sm leading-relaxed ${isDark ? 'text-navy-300' : 'text-navy-600'}`}>
             Our AI-powered analysis uses Gemini to evaluate technical indicators, fundamental
             factors, and macro conditions to provide actionable insights. Analysis is generated
             once per day per stock. Use "Generate All" to analyze all stocks at once, or click

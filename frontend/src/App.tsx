@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { SnapshotsPage } from './pages/SnapshotsPage';
 import { SnapshotDetailPage } from './pages/SnapshotDetailPage';
 import { CreateSnapshotPage } from './pages/CreateSnapshotPage';
+import { ThemeProvider, useTheme, themeClasses, getThemeClass } from './contexts/ThemeContext';
 
 interface HealthStatus {
   status: string;
@@ -45,52 +46,95 @@ const features: FeatureCard[] = [
   },
 ];
 
-function Navigation() {
-  const location = useLocation();
-  const isHome = location.pathname === '/';
+// Theme Toggle Button Component
+function ThemeToggle() {
+  const { isDark, toggleTheme } = useTheme();
 
   return (
-    <nav className="bg-navy-900 border-b border-navy-800">
+    <button
+      onClick={toggleTheme}
+      className={`p-2 rounded-lg transition-colors ${
+        isDark
+          ? 'bg-navy-700 hover:bg-navy-600 text-gold-400'
+          : 'bg-slate-100 hover:bg-slate-200 text-navy-600'
+      }`}
+      aria-label="Toggle theme"
+    >
+      {isDark ? (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+// Navigation Component
+function Navigation() {
+  const location = useLocation();
+  const { isDark } = useTheme();
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <nav className={getThemeClass(themeClasses.nav, isDark)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center gap-2 text-white font-bold text-xl">
+          {/* Logo */}
+          <Link to="/" className={`flex items-center gap-2 font-bold text-xl ${isDark ? 'text-white' : 'text-navy-800'}`}>
             <span className="text-gold-400">📊</span>
             <span>Financial Tracker</span>
           </Link>
-          <div className="flex gap-2">
+
+          {/* Navigation Links */}
+          <div className="flex items-center gap-2">
             <Link
               to="/"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isHome
-                  ? 'bg-navy-700 text-white shadow-sm'
-                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
+                isActive('/')
+                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
               }`}
             >
               Home
             </Link>
+
             <Link
               to="/dashboard"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                location.pathname === '/dashboard'
-                  ? 'bg-navy-700 text-white shadow-sm'
-                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
+                isActive('/dashboard')
+                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
               }`}
             >
               Dashboard
             </Link>
+
             <Link
               to="/analysis"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                location.pathname === '/analysis'
-                  ? 'bg-navy-700 text-white shadow-sm'
-                  : 'text-navy-200 hover:text-white hover:bg-navy-800'
+                isActive('/analysis')
+                  ? isDark ? 'bg-navy-700 text-white' : 'bg-slate-200 text-navy-800'
+                  : isDark ? 'text-navy-200 hover:text-white hover:bg-navy-800' : 'text-slate-600 hover:text-navy-800 hover:bg-slate-100'
               }`}
             >
               Stock Analysis
             </Link>
+
+            {/* Divider */}
+            <div className={`w-px h-6 mx-2 ${isDark ? 'bg-navy-700' : 'bg-slate-200'}`} />
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
+            {/* Login Button */}
             <Link
               to="/login"
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-gold-500 text-navy-900 hover:bg-gold-400 transition-all duration-200"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
             >
               Login
             </Link>
@@ -101,10 +145,12 @@ function Navigation() {
   );
 }
 
+// Home Page Component
 function HomePage() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -113,7 +159,7 @@ function HomePage() {
         const response = await axios.get<HealthStatus>(`${apiUrl}/api/health`);
         setHealth(response.data);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('API is not available');
         setHealth(null);
       } finally {
@@ -129,12 +175,28 @@ function HomePage() {
       {/* Header */}
       <header className="pt-12 pb-8 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+          <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-4 ${isDark ? 'text-white' : 'text-navy-800'}`}>
             <span className="text-gold-400">📊</span> Financial Tracker
           </h1>
-          <p className="text-lg md:text-xl text-navy-200 max-w-2xl mx-auto">
+          <p className={`text-lg md:text-xl max-w-2xl mx-auto ${isDark ? 'text-navy-200' : 'text-slate-600'}`}>
             Take control of your finances. Track accounts, investments, and watch your wealth grow.
           </p>
+
+          {/* CTA Buttons */}
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Link
+              to="/login"
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
+            >
+              Get Started
+            </Link>
+            <Link
+              to="/analysis"
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${getThemeClass(themeClasses.button.secondary, isDark)}`}
+            >
+              Try Stock Analysis
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -142,22 +204,22 @@ function HomePage() {
       <main className="px-4 pb-12">
         <div className="max-w-4xl mx-auto">
           {/* API Status Card */}
-          <div className="bg-navy-800/80 backdrop-blur-lg rounded-xl p-6 mb-8 border border-navy-700">
-            <h2 className="text-lg font-semibold text-white mb-3">API Status</h2>
+          <div className={`rounded-xl p-6 mb-8 border ${getThemeClass(themeClasses.card, isDark)}`}>
+            <h2 className={`text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-navy-800'}`}>API Status</h2>
             {loading ? (
               <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-gold-400 border-t-transparent" />
-                <span className="text-navy-200">Checking API status...</span>
+                <div className={`animate-spin rounded-full h-5 w-5 border-2 border-t-transparent ${isDark ? 'border-gold-400' : 'border-navy-600'}`} />
+                <span className={isDark ? 'text-navy-200' : 'text-slate-600'}>Checking API status...</span>
               </div>
             ) : health ? (
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
-                <span className="text-emerald-400 font-medium">{health.message}</span>
+                <span className="text-emerald-500 font-medium">{health.message}</span>
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-red-400 rounded-full" />
-                <span className="text-red-400">{error}</span>
+                <span className="text-red-500">{error}</span>
               </div>
             )}
           </div>
@@ -167,15 +229,17 @@ function HomePage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-navy-800/80 backdrop-blur-lg rounded-xl p-6 border border-navy-700 hover:border-navy-600 transition-all duration-300 hover:shadow-lg hover:shadow-navy-900/50"
+                className={`rounded-xl p-6 border transition-all duration-300 hover:scale-[1.02] ${getThemeClass(themeClasses.card, isDark)}`}
               >
                 <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-navy-300 mb-4">{feature.description}</p>
+                <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-navy-800'}`}>{feature.title}</h3>
+                <p className={`mb-4 ${isDark ? 'text-navy-300' : 'text-slate-600'}`}>{feature.description}</p>
                 {feature.link && (
                   <Link
                     to={feature.link}
-                    className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300 font-medium transition-colors"
+                    className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                      isDark ? 'text-gold-400 hover:text-gold-300' : 'text-navy-600 hover:text-navy-800'
+                    }`}
                   >
                     Try Now
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,16 +252,20 @@ function HomePage() {
           </div>
 
           {/* Get Started Section */}
-          <div className="bg-gradient-to-r from-navy-800 to-navy-700 backdrop-blur-lg rounded-xl p-8 border border-gold-500/30 text-center">
-            <h2 className="text-2xl font-bold text-white mb-3">
+          <div className={`rounded-xl p-8 border text-center ${
+            isDark
+              ? 'bg-gradient-to-r from-navy-800 to-navy-700 border-gold-500/30'
+              : 'bg-gradient-to-r from-slate-100 to-slate-50 border-slate-200'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-800'}`}>
               <span className="text-gold-400">🚀</span> Get Started
             </h2>
-            <p className="text-navy-200 mb-6">
+            <p className={`mb-6 ${isDark ? 'text-navy-200' : 'text-slate-600'}`}>
               Sign in with Google to start tracking your finances and investments.
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 text-navy-900 font-semibold rounded-lg hover:bg-gold-400 transition-colors"
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${getThemeClass(themeClasses.button.primary, isDark)}`}
             >
               <span>Sign In with Google</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,16 +279,18 @@ function HomePage() {
   );
 }
 
+// App Content Component
 function AppContent() {
   const location = useLocation();
-  const isAnalysisPage = location.pathname === '/analysis';
+  const { isDark } = useTheme();
+
   const isProtectedPage = ['/dashboard', '/snapshots', '/snapshots/new'].includes(location.pathname) ||
     location.pathname.startsWith('/snapshots/');
   const isLoginPage = location.pathname === '/login';
-  const showNavigation = !isAnalysisPage && !isProtectedPage && !isLoginPage;
+  const showNavigation = !isProtectedPage && !isLoginPage;
 
   return (
-    <div className={`min-h-screen ${isAnalysisPage || isProtectedPage ? 'bg-slate-50' : 'bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800'}`}>
+    <div className={`min-h-screen ${isProtectedPage ? (isDark ? 'bg-navy-900' : 'bg-slate-50') : getThemeClass(themeClasses.pageBg, isDark)}`}>
       {showNavigation && <Navigation />}
 
       <Routes>
@@ -266,12 +336,12 @@ function AppContent() {
 
       {/* Footer */}
       {showNavigation && (
-        <footer className="py-6 px-4 bg-navy-950 border-t border-navy-800">
+        <footer className={`py-6 px-4 ${getThemeClass(themeClasses.footer, isDark)}`}>
           <div className="max-w-4xl mx-auto text-center text-sm">
-            <p className="text-navy-400">
+            <p className={isDark ? 'text-navy-400' : 'text-slate-600'}>
               Financial Tracker &copy; {new Date().getFullYear()}
             </p>
-            <p className="mt-1 text-navy-500">
+            <p className={`mt-1 ${isDark ? 'text-navy-500' : 'text-slate-500'}`}>
               by Burak Intisah
             </p>
           </div>
@@ -281,22 +351,25 @@ function AppContent() {
   );
 }
 
+// Main App Component
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <AppContent />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-          }}
-        />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#333',
+                color: '#fff',
+              },
+            }}
+          />
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }
